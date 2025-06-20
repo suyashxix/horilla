@@ -132,6 +132,12 @@ def invoice_detail(request, invoice_id):
     """Show invoice details with email sending capability"""
     invoice = get_object_or_404(Invoice, id=invoice_id)
     
+    # Calculate tax amount in the view
+    tax_amount = (invoice.amount * invoice.tax_rate) / 100 if invoice.amount and invoice.tax_rate else 0
+    
+    # Fix: Handle None due_date
+    due_date_str = invoice.due_date.strftime('%B %d, %Y') if invoice.due_date else 'Not Set'
+    
     # Prepare default email content
     default_subject = f"Invoice {invoice.invoice_number} - Recruitment Services"
     default_body = f"""Dear {invoice.placement.client.contact_person},
@@ -145,9 +151,9 @@ As per our agreement, the notice period of {invoice.placement.notice_period_days
 Invoice Details:
 - Invoice Number: {invoice.invoice_number}
 - Amount: ₹{invoice.amount:,.2f}
-- Tax ({invoice.tax_rate}%): ₹{(invoice.amount * invoice.tax_rate / 100):,.2f}
+- Tax ({invoice.tax_rate}%): ₹{tax_amount:,.2f}
 - Total Amount: ₹{invoice.total_amount:,.2f}
-- Due Date: {invoice.due_date.strftime('%B %d, %Y')}
+- Due Date: {due_date_str}
 
 Please process the payment at your earliest convenience. If you have any questions or need additional information, please don't hesitate to contact me.
 
@@ -158,6 +164,8 @@ Best regards,
 
     context = {
         'invoice': invoice,
+        'tax_amount': tax_amount,
+        'due_date_str': due_date_str,
         'default_subject': default_subject,
         'default_body': default_body,
     }

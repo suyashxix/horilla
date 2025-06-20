@@ -20,4 +20,5 @@ urlpatterns = [
     path('invoices/create/<int:placement_id>/', views.invoice_create, name='invoice_create'),
     path('invoices/<int:invoice_id>/', views.invoice_detail, name='invoice_detail'),
     path('invoices/<int:invoice_id>/send/', views.send_invoice_email, name='send_invoice'),
+    
 ]
