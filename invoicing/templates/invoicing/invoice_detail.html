@@ -1,0 +1,293 @@
+{% load i18n %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="oh-general__tab-target oh-profile-section">
+    <div class="oh-profile-section__card">
+        <div class="oh-titlebar">
+            <h3 class="oh-title">{% trans "Invoice Details" %}</h3>
+            <div class="oh-titlebar__actions">
+                <a href="{% url 'invoicing:invoice_list' %}" class="oh-btn oh-btn--secondary">
+                    <i class="oh-icon-arrow-left"></i> {% trans "Back to Invoices" %}
+                </a>
+                <div class="oh-dropdown">
+                    <button class="oh-btn oh-btn--primary oh-dropdown__toggle">
+                        <i class="oh-icon-more"></i> {% trans "Actions" %}
+                    </button>
+                    <div class="oh-dropdown__content">
+                        <a href="#" class="oh-dropdown__item" data-bs-toggle="modal" data-bs-target="#emailModal">
+                            <i class="oh-icon-mail"></i> {% trans "Send Email" %}
+                        </a>
+                        <a href="#" class="oh-dropdown__item">
+                            <i class="oh-icon-download"></i> {% trans "Download PDF" %}
+                        </a>
+                        <a href="#" class="oh-dropdown__item">
+                            <i class="oh-icon-edit"></i> {% trans "Edit Invoice" %}
+                        </a>
+                        {% if invoice.status != 'paid' %}
+                        <a href="#" class="oh-dropdown__item text-success">
+                            <i class="oh-icon-check"></i> {% trans "Mark as Paid" %}
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Main Invoice Details -->
+            <div class="col-md-8">
+                <!-- Invoice Header -->
+                <div class="oh-card">
+                    <div class="oh-card__header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-1">{{ invoice.invoice_number }}</h4>
+                                <small class="text-muted">{% trans "Issue Date" %}: {{ invoice.issue_date }}</small>
+                            </div>
+                            <span class="badge bg-{% if invoice.status == 'paid' %}success{% elif invoice.status == 'sent' %}warning{% elif invoice.status == 'overdue' %}danger{% else %}secondary{% endif %} badge-lg">
+                                {{ invoice.get_status_display }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="oh-card__body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>{% trans "Bill To" %}</h5>
+                                <address>
+                                    <strong>{{ invoice.placement.client.name }}</strong><br>
+                                    {{ invoice.placement.client.contact_person }}<br>
+                                    {{ invoice.placement.client.address|linebreaks }}
+                                    {% trans "Email" %}: {{ invoice.placement.client.email }}<br>
+                                    {% if invoice.placement.client.phone %}
+                                        {% trans "Phone" %}: {{ invoice.placement.client.phone }}
+                                    {% endif %}
+                                </address>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>{% trans "Placement Details" %}</h5>
+                                <p><strong>{% trans "Candidate" %}:</strong> {{ invoice.placement.candidate.name }}</p>
+                                <p><strong>{% trans "Position" %}:</strong> {{ invoice.placement.position }}</p>
+                                <p><strong>{% trans "Joining Date" %}:</strong> {{ invoice.placement.joining_date }}</p>
+                                <p><strong>{% trans "Notice Period" %}:</strong> {{ invoice.placement.notice_period_days }} {% trans "days" %}</p>
+                                <p><strong>{% trans "Placement Fee" %}:</strong> ₹{{ invoice.placement.placement_fee|floatformat:2 }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Invoice Items -->
+                <div class="oh-card">
+                    <div class="oh-card__header">
+                        <h5>{% trans "Invoice Summary" %}</h5>
+                    </div>
+                    <div class="oh-card__body">
+                        <div class="table-responsive">
+                            <table class="table table-borderless">
+                                <thead>
+                                    <tr class="border-bottom">
+                                        <th>{% trans "Description" %}</th>
+                                        <th class="text-end">{% trans "Amount" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>
+                                            <strong>{% trans "Recruitment Service Fee" %}</strong><br>
+                                            <small class="text-muted">
+                                                {% trans "Placement of" %} {{ invoice.placement.candidate.name }} 
+                                                {% trans "as" %} {{ invoice.placement.position }}
+                                            </small>
+                                        </td>
+                                        <td class="text-end">₹{{ invoice.amount|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>{% trans "Tax" %} ({{ invoice.tax_rate }}%)</td>
+                                        <td class="text-end">₹{{ tax_amount|floatformat:2 }}</td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr class="border-top">
+                                        <td><strong>{% trans "Total Amount" %}</strong></td>
+                                        <td class="text-end"><strong class="h5">₹{{ invoice.total_amount|floatformat:2 }}</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <p><strong>{% trans "Issue Date" %}:</strong> {{ invoice.issue_date }}</p>
+                                <p><strong>{% trans "Due Date" %}:</strong> 
+                                    {% if invoice.due_date %}
+                                        {{ invoice.due_date }}
+                                        {% if invoice.status == 'overdue' %}
+                                            <span class="badge bg-danger ms-2">{% trans "Overdue" %}</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">{% trans "Not Set" %}</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                {% if invoice.payment_received_date %}
+                                <p><strong>{% trans "Payment Received" %}:</strong> {{ invoice.payment_received_date }}</p>
+                                {% endif %}
+                                {% if invoice.sent_at %}
+                                <p><strong>{% trans "Sent At" %}:</strong> {{ invoice.sent_at }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Notes -->
+                {% if invoice.payment_notes %}
+                <div class="oh-card">
+                    <div class="oh-card__header">
+                        <h5>{% trans "Payment Notes" %}</h5>
+                    </div>
+                    <div class="oh-card__body">
+                        <p>{{ invoice.payment_notes|linebreaks }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-md-4">
+                <!-- Quick Actions -->
+                <div class="oh-card">
+                    <div class="oh-card__header">
+                        <h5>{% trans "Quick Actions" %}</h5>
+                    </div>
+                    <div class="oh-card__body">
+                        <div class="d-grid gap-2">
+                            <button class="oh-btn oh-btn--primary" data-bs-toggle="modal" data-bs-target="#emailModal">
+                                <i class="oh-icon-mail"></i> {% trans "Send Email" %}
+                            </button>
+                            <button class="oh-btn oh-btn--secondary">
+                                <i class="oh-icon-download"></i> {% trans "Download PDF" %}
+                            </button>
+                            {% if invoice.status != 'paid' %}
+                            <button class="oh-btn oh-btn--success">
+                                <i class="oh-icon-check"></i> {% trans "Mark as Paid" %}
+                            </button>
+                            {% endif %}
+                            <a href="#" class="oh-btn oh-btn--light">
+                                <i class="oh-icon-edit"></i> {% trans "Edit Invoice" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Invoice Status History -->
+                <div class="oh-card">
+                    <div class="oh-card__header">
+                        <h5>{% trans "Status History" %}</h5>
+                    </div>
+                    <div class="oh-card__body">
+                        <div class="timeline">
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-secondary"></div>
+                                <div class="timeline-content">
+                                    <h6>{% trans "Invoice Created" %}</h6>
+                                    <small class="text-muted">{{ invoice.created_at }}</small>
+                                </div>
+                            </div>
+                            {% if invoice.sent_at %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-warning"></div>
+                                <div class="timeline-content">
+                                    <h6>{% trans "Invoice Sent" %}</h6>
+                                    <small class="text-muted">{{ invoice.sent_at }}</small>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if invoice.payment_received_date %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-success"></div>
+                                <div class="timeline-content">
+                                    <h6>{% trans "Payment Received" %}</h6>
+                                    <small class="text-muted">{{ invoice.payment_received_date }}</small>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Email Modal -->
+<div class="modal fade" id="emailModal" tabindex="-1" aria-labelledby="emailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="emailModalLabel">{% trans "Send Invoice Email" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="#">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="email_to" class="form-label">{% trans "To" %}</label>
+                        <input type="email" class="form-control" id="email_to" value="{{ invoice.placement.client.email }}" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email_subject" class="form-label">{% trans "Subject" %}</label>
+                        <input type="text" class="form-control" id="email_subject" value="{{ default_subject }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="email_body" class="form-label">{% trans "Message" %}</label>
+                        <textarea class="form-control" id="email_body" rows="10">{{ default_body }}</textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+                <button type="button" class="btn btn-primary">{% trans "Send Email" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -35px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: -30px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.badge-lg {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+}
+</style>
+{% endblock %}
