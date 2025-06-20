@@ -1,0 +1,90 @@
+{% load i18n %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="oh-general__tab-target oh-profile-section">
+    <div class="oh-profile-section__card">
+        <h3 class="oh-title">{% trans "Invoicing Dashboard" %} </h3>
+
+        <div class="row">
+            <div class="col-md-3">
+                <div class="oh-card">
+                    <div class="oh-card__body">
+                        <h4>{{ eligible_count }}</h4>
+                        <p>{% trans "Eligible for Invoicing" %}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="oh-card">
+                    <div class="oh-card__body">
+                        <h4>{{ total_placements }}</h4>
+                        <p>{% trans "Total Placements" %}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="oh-card">
+                    <div class="oh-card__body">
+                        <h4>{{ recent_invoices|length }}</h4>
+                        <p>{% trans "Recent Invoices" %}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="oh-card">
+                    <div class="oh-card__body">
+                        <h4>{{ notifications|length }}</h4>
+                        <p>{% trans "Pending Notifications" %}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="oh-profile-section__card">
+                    <h5>{% trans "Pending Notifications" %}</h5>
+                    {% for notification in notifications %}
+                    <div class="oh-alert oh-alert--info">
+                        <strong>{{ notification.placement.candidate }}</strong><br>
+                        <small>{{ notification.message }}</small>
+                        <a href="{% url 'invoicing:invoice_create' notification.placement.id %}"
+                           class="oh-btn oh-btn--secondary oh-btn--sm">
+                            {% trans "Create Invoice" %}
+                        </a>
+                    </div>
+                    {% empty %}
+                    <p class="oh-text--muted">{% trans "No pending notifications" %}</p>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="oh-profile-section__card">
+                    <h5>{% trans "Recent Invoices" %}</h5>
+                    {% for invoice in recent_invoices %}
+                    <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                        <div>
+                            <strong>{{ invoice.invoice_number }}</strong><br>
+                            <small>{{ invoice.placement.client.name }}</small><br>
+                            <small class="text-muted">₹{{ invoice.total_amount|floatformat:2 }}</small>
+                        </div>
+                        <div>
+                            <span class="badge bg-{% if invoice.status == 'paid' %}success{% elif invoice.status == 'sent' %}warning{% else %}secondary{% endif %}">
+                                {{ invoice.get_status_display }}
+                            </span>
+                            <a href="{% url 'invoicing:invoice_detail' invoice.id %}"
+                               class="btn btn-outline-primary btn-sm ms-2">
+                                View
+                            </a>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="oh-text--muted">{% trans "No invoices yet" %}</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

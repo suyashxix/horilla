@@ -3,6 +3,7 @@
 from distutils.version import (  # pylint: disable=no-name-in-module,import-error
     StrictVersion,
 )
+from django.db.models import Index
 
 from django import get_version
 from django.conf import settings
@@ -221,11 +222,15 @@ class AbstractNotification(models.Model):
     data = JSONField(blank=True, null=True)
     objects = NotificationQuerySet.as_manager()
 
+    from django.db.models import Index
+
     class Meta:
         abstract = True
         ordering = ("-timestamp",)
-        # speed up notifications count query
-        index_together = ("recipient", "unread")
+        indexes = [
+            Index(fields=["recipient", "unread"]),
+        ]
+
 
     def __str__(self):
         ctx = {

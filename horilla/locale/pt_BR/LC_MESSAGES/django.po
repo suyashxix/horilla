@@ -16768,9 +16768,13 @@ msgstr "Nenhuma opção : {name}"
 #: horillavenv/lib/python3.12/site-packages/click/exceptions.py:232
 #, python-brace-format
 msgid "Did you mean {possibility}?"
-msgid_plural "(Possible options: {possibilities})"
-msgstr[0] "Você quis dizer {possibility}?"
-msgstr[1] "(Opções possíveis: {possibilities})"
+msgstr "Você quis dizer {possibility}?"
+
+#: horillavenv/lib/python3.12/site-packages/click/exceptions.py:232
+#, python-brace-format
+msgid "(Possible options: {possibilities})"
+msgstr "(Opções possíveis: {possibilities})"
+
 
 #: horillavenv/lib/python3.12/site-packages/click/exceptions.py:270
 msgid "unknown error"

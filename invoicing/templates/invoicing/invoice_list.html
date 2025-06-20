@@ -1,0 +1,72 @@
+
+{% load i18n %}
+{% load static %}
+{% load widget_tweaks %}
+<link href="{% static 'invoicing/css/invoicing.css' %}" rel="stylesheet">
+<script src="{% static 'invoicing/js/invoicing.js' %}"></script>
+{% block content %}
+<div class="oh-general__tab-target oh-profile-section">
+    <div class="oh-profile-section__card">
+        <div class="oh-titlebar">
+            <h3 class="oh-title">{% trans "Invoices" %}</h3>
+        </div>
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <input type="text" class="form-control" placeholder="{% trans 'Search invoices...' %}" id="invoiceSearch">
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="statusFilter">
+                    <option value="">{% trans "All Statuses" %}</option>
+                    <option value="draft">{% trans "Draft" %}</option>
+                    <option value="sent">{% trans "Sent" %}</option>
+                    <option value="paid">{% trans "Paid" %}</option>
+                </select>
+            </div>
+        </div>
+        <div class="oh-table-container">
+            <table class="oh-table">
+                <thead>
+                    <tr>
+                        <th>{% trans "Invoice Number" %}</th>
+                        <th>{% trans "Client" %}</th>
+                        <th>{% trans "Amount" %}</th>
+                        <th>{% trans "Due Date" %}</th>
+                        <th>{% trans "Status" %}</th>
+                        <th>{% trans "Actions" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for invoice in invoices %}
+                    <tr>
+                        <td>{{ invoice.invoice_number }}</td>
+                        <td>{{ invoice.placement.client.name }}</td>
+                        <td>₹{{ invoice.total_amount|floatformat:2 }}</td>
+                        <td>{{ invoice.due_date }}</td>
+                        <td>
+                            <span class="badge bg-{% if invoice.status == 'paid' %}success{% elif invoice.status == 'sent' %}warning{% else %}secondary{% endif %}">
+                                {{ invoice.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'invoicing:invoice_detail' invoice.id %}" class="oh-btn oh-btn--secondary oh-btn--sm">
+                                {% trans "View" %}
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center oh-text--muted">
+                            {% trans "No invoices found" %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script src="{% static 'invoicing/js/invoicing.js' %}"></script>
+{% endblock %}
