@@ -8,30 +8,59 @@
             <h4><i class="fa fa-user-check me-2"></i>Placements</h4>
         </div>
         <div class="card-body">
+            <!-- Debug information -->
+            <div class="alert alert-info">
+                <strong>Debug:</strong> Found {{ placement_data|length }} placements
+            </div>
+            
             <div class="list-group">
-                {% for placement in placements %}
+                {% for data in placement_data %}
                 <div class="list-group-item">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h5>{{ placement.candidate }}</h5>
+                            <h5>{{ data.placement.candidate.name }}</h5>
                             <small class="text-muted">
-                                {{ placement.client.name }} • {{ placement.position }}
+                                {{ data.placement.client.name }} • {{ data.placement.position }}
+                            </small>
+                            <br>
+                            <small class="text-info">
+                                Joining: {{ data.placement.joining_date }} | 
+                                Notice Period: {{ data.placement.notice_period_days }} days
+                                {% if data.has_invoice %}
+                                    | <span class="text-success">Invoice Created</span>
+                                {% endif %}
                             </small>
                         </div>
-                        <div>
-                            <span class="badge bg-{% if placement.is_invoice_eligible %}success{% else %}warning{% endif %}">
-                                {% if placement.is_invoice_eligible %}
-                                Eligible
+                        <div class="text-end">
+                            <span class="badge bg-{% if data.is_eligible %}success{% else %}warning{% endif %} mb-2">
+                                {% if data.is_eligible %}
+                                    Eligible for Invoice
                                 {% else %}
-                                {{ placement.days_until_eligible }} days left
+                                    {% if data.days_until_eligible %}
+                                        {{ data.days_until_eligible }} days left
+                                    {% else %}
+                                        Not eligible
+                                    {% endif %}
                                 {% endif %}
                             </span>
+                            <br>
+                            {% if data.is_eligible and not data.has_invoice %}
+                                <a href="{% url 'invoicing:invoice_create' data.placement.id %}" class="btn btn-sm btn-primary">
+                                    Create Invoice
+                                </a>
+                            {% elif data.has_invoice %}
+                                <a href="{% url 'invoicing:invoice_detail' data.placement.invoice.id %}" class="btn btn-sm btn-outline-primary">
+                                    View Invoice
+                                </a>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
                 {% empty %}
                 <div class="text-center py-4 text-muted">
-                    No placements found
+                    <strong>No placements found</strong>
+                    <br>
+                    <small>No active placements in the system</small>
                 </div>
                 {% endfor %}
             </div>

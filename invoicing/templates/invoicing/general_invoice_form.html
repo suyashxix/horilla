@@ -1,0 +1,217 @@
+{% load i18n %}
+{% load widget_tweaks %}
+
+{% block content %}
+<div class="oh-general__tab-target oh-profile-section">
+    <div class="oh-profile-section__card">
+        <div class="oh-titlebar">
+            <h3 class="oh-title">{{ title }}</h3>
+            <a href="{% url 'invoicing:invoice_list' %}" class="oh-btn oh-btn--secondary">
+                <i class="oh-icon-arrow-left"></i> {% trans "Back to Invoices" %}
+            </a>
+        </div>
+
+        <form method="post" class="oh-form" id="generalInvoiceForm">
+            {% csrf_token %}
+            
+            <!-- Client Information -->
+            <div class="oh-card mb-4">
+                <div class="oh-card__header">
+                    <h5>{% trans "Client Information" %}</h5>
+                </div>
+                <div class="oh-card__body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="oh-form__group">
+                                <label for="{{ form.client_name.id_for_label }}" class="oh-form__label">
+                                    {% trans "Client Name" %} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.client_name }}
+                                {% if form.client_name.errors %}
+                                    <div class="oh-form__error">{{ form.client_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="oh-form__group">
+                                <label for="{{ form.client_email.id_for_label }}" class="oh-form__label">
+                                    {% trans "Client Email" %} <span class="text-danger">*</span>
+                                </label>
+                                {{ form.client_email }}
+                                {% if form.client_email.errors %}
+                                    <div class="oh-form__error">{{ form.client_email.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="oh-form__group">
+                                <label for="{{ form.client_phone.id_for_label }}" class="oh-form__label">
+                                    {% trans "Client Phone" %}
+                                </label>
+                                {{ form.client_phone }}
+                                {% if form.client_phone.errors %}
+                                    <div class="oh-form__error">{{ form.client_phone.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="oh-form__group">
+                                <label for="{{ form.status.id_for_label }}" class="oh-form__label">
+                                    {% trans "Status" %}
+                                </label>
+                                {{ form.status }}
+                                {% if form.status.errors %}
+                                    <div class="oh-form__error">{{ form.status.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="oh-form__group">
+                        <label for="{{ form.client_address.id_for_label }}" class="oh-form__label">
+                            {% trans "Client Address" %} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.client_address }}
+                        {% if form.client_address.errors %}
+                            <div class="oh-form__error">{{ form.client_address.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Service Details -->
+            <div class="oh-card mb-4">
+                <div class="oh-card__header">
+                    <h5>{% trans "Service Details" %}</h5>
+                </div>
+                <div class="oh-card__body">
+                    <div class="oh-form__group">
+                        <label for="{{ form.service_description.id_for_label }}" class="oh-form__label">
+                            {% trans "Service Description" %} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.service_description }}
+                        {% if form.service_description.errors %}
+                            <div class="oh-form__error">{{ form.service_description.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="oh-form__group">
+                                <label for="{{ form.amount.id_for_label }}" class="oh-form__label">
+                                    {% trans "Amount" %} <span class="text-danger">*</span>
+                                </label>
+                                <div class="oh-form__input-group">
+                                    <span class="oh-form__input-group-text">₹</span>
+                                    {{ form.amount }}
+                                </div>
+                                {% if form.amount.errors %}
+                                    <div class="oh-form__error">{{ form.amount.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="oh-form__group">
+                                <label for="{{ form.tax_rate.id_for_label }}" class="oh-form__label">
+                                    {% trans "Tax Rate" %} (%)
+                                </label>
+                                {{ form.tax_rate }}
+                                {% if form.tax_rate.errors %}
+                                    <div class="oh-form__error">{{ form.tax_rate.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Total Calculation Display -->
+                    <div class="oh-card oh-card--light">
+                        <div class="oh-card__body">
+                            <div class="row text-center">
+                                <div class="col-md-4">
+                                    <strong>{% trans "Subtotal" %}:</strong>
+                                    <div id="subtotal">₹0.00</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>{% trans "Tax" %}:</strong>
+                                    <div id="taxAmount">₹0.00</div>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>{% trans "Total" %}:</strong>
+                                    <div id="totalAmount" class="text-primary h5">₹0.00</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email Settings -->
+            <div class="oh-card mb-4">
+                <div class="oh-card__header">
+                    <h5>{% trans "Email Settings" %}</h5>
+                </div>
+                <div class="oh-card__body">
+                    <div class="oh-form__group">
+                        <label for="{{ form.email_subject.id_for_label }}" class="oh-form__label">
+                            {% trans "Email Subject" %}
+                        </label>
+                        {{ form.email_subject }}
+                        {% if form.email_subject.errors %}
+                            <div class="oh-form__error">{{ form.email_subject.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="oh-form__group">
+                        <label for="{{ form.email_body.id_for_label }}" class="oh-form__label">
+                            {% trans "Email Body" %}
+                        </label>
+                        {{ form.email_body }}
+                        {% if form.email_body.errors %}
+                            <div class="oh-form__error">{{ form.email_body.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="oh-form__actions">
+                <button type="submit" class="oh-btn oh-btn--primary">
+                    <i class="oh-icon-save"></i> {% trans "Create General Invoice" %}
+                </button>
+                <a href="{% url 'invoicing:invoice_list' %}" class="oh-btn oh-btn--light">
+                    {% trans "Cancel" %}
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const amountInput = document.getElementById('id_amount');
+    const taxRateInput = document.getElementById('id_tax_rate');
+    
+    // Calculate totals
+    function calculateTotals() {
+        const amount = parseFloat(amountInput.value) || 0;
+        const taxRate = parseFloat(taxRateInput.value) || 0;
+        const taxAmount = (amount * taxRate) / 100;
+        const total = amount + taxAmount;
+        
+        document.getElementById('subtotal').textContent = '₹' + amount.toFixed(2);
+        document.getElementById('taxAmount').textContent = '₹' + taxAmount.toFixed(2);
+        document.getElementById('totalAmount').textContent = '₹' + total.toFixed(2);
+    }
+    
+    // Event listeners
+    amountInput.addEventListener('input', calculateTotals);
+    taxRateInput.addEventListener('input', calculateTotals);
+    
+    // Initialize
+    calculateTotals();
+});
+</script>
+{% endblock %}

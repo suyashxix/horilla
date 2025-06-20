@@ -158,29 +158,26 @@
             <!-- Sidebar -->
             <div class="col-md-4">
                 <!-- Quick Actions -->
-                <div class="oh-card">
-                    <div class="oh-card__header">
-                        <h5>{% trans "Quick Actions" %}</h5>
-                    </div>
-                    <div class="oh-card__body">
-                        <div class="d-grid gap-2">
-                            <button class="oh-btn oh-btn--primary" data-bs-toggle="modal" data-bs-target="#emailModal">
-                                <i class="oh-icon-mail"></i> {% trans "Send Email" %}
-                            </button>
-                            <button class="oh-btn oh-btn--secondary">
-                                <i class="oh-icon-download"></i> {% trans "Download PDF" %}
-                            </button>
-                            {% if invoice.status != 'paid' %}
-                            <button class="oh-btn oh-btn--success">
-                                <i class="oh-icon-check"></i> {% trans "Mark as Paid" %}
-                            </button>
-                            {% endif %}
-                            <a href="#" class="oh-btn oh-btn--light">
-                                <i class="oh-icon-edit"></i> {% trans "Edit Invoice" %}
-                            </a>
+                    <div class="oh-card">
+                        <div class="oh-card__header">
+                            <h5>{% trans "Quick Actions" %}</h5>
+                        </div>
+                        <div class="oh-card__body">
+                            <div class="d-grid gap-2">
+                                <button class="oh-btn oh-btn--primary" data-bs-toggle="modal" data-bs-target="#emailModal">
+                                    <i class="oh-icon-mail"></i> {% trans "Send Email" %}
+                                </button>
+                                <a href="{% url 'invoicing:invoice_pdf' invoice.id %}" class="oh-btn oh-btn--secondary" target="_blank">
+                                    <i class="oh-icon-download"></i> {% trans "Download PDF" %}
+                                </a>
+                                {% if invoice.status != 'paid' %}
+                                <button class="oh-btn oh-btn--success" onclick="markAsPaid({{ invoice.id }})">
+                                    <i class="oh-icon-check"></i> {% trans "Mark as Paid" %}
+                                </button>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
-                </div>
 
                 <!-- Invoice Status History -->
                 <div class="oh-card">
@@ -222,38 +219,77 @@
     </div>
 </div>
 
-<!-- Email Modal -->
-<div class="modal fade" id="emailModal" tabindex="-1" aria-labelledby="emailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="emailModalLabel">{% trans "Send Invoice Email" %}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+
+
+<!-- Update the email modal form -->
+<div class="modal-body">
+        <form id="emailForm">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="email_to" class="form-label">{% trans "To" %}</label>
+                <input type="email" class="form-control" id="email_to" value="{{ invoice.placement.client.email }}" readonly>
             </div>
-            <div class="modal-body">
-                <form method="post" action="#">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="email_to" class="form-label">{% trans "To" %}</label>
-                        <input type="email" class="form-control" id="email_to" value="{{ invoice.placement.client.email }}" readonly>
-                    </div>
-                    <div class="mb-3">
-                        <label for="email_subject" class="form-label">{% trans "Subject" %}</label>
-                        <input type="text" class="form-control" id="email_subject" value="{{ default_subject }}">
-                    </div>
-                    <div class="mb-3">
-                        <label for="email_body" class="form-label">{% trans "Message" %}</label>
-                        <textarea class="form-control" id="email_body" rows="10">{{ default_body }}</textarea>
-                    </div>
-                </form>
+            <div class="mb-3">
+                <label for="email_subject" class="form-label">{% trans "Subject" %}</label>
+                <input type="text" class="form-control" id="email_subject" name="email_subject" value="{{ default_subject }}">
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
-                <button type="button" class="btn btn-primary">{% trans "Send Email" %}</button>
+            <div class="mb-3">
+                <label for="email_body" class="form-label">{% trans "Message" %}</label>
+                <textarea class="form-control" id="email_body" name="email_body" rows="10">{{ default_body }}</textarea>
             </div>
-        </div>
+        </form>
     </div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+    <button type="button" class="btn btn-primary" onclick="sendEmail({{ invoice.id }})">{% trans "Send Email" %}</button>
 </div>
+
+
+<script>
+function markAsPaid(invoiceId) {
+    if (confirm('Are you sure you want to mark this invoice as paid?')) {
+        fetch(`/invoicing/invoices/${invoiceId}/mark-paid/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=mark_paid'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Invoice marked as paid successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        });
+    }
+}
+
+function sendEmail(invoiceId) {
+    const form = document.getElementById('emailForm');
+    const formData = new FormData(form);
+    
+    fetch(`/invoicing/invoices/${invoiceId}/send-email/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Invoice sent successfully!');
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    });
+}
+</script>
 
 <style>
 .timeline {

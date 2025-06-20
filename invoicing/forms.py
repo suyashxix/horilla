@@ -1,6 +1,6 @@
 from django import forms
 from django.utils import timezone
-from .models import Client, Placement, Invoice, InvoiceNotification
+from .models import Client, GeneralInvoice, Placement, Invoice, InvoiceNotification
 from recruitment.models import Candidate
 
 class ClientForm(forms.ModelForm):
@@ -52,3 +52,24 @@ class EmailForm(forms.Form):
     body = forms.CharField(
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 10})
     )
+
+class GeneralInvoiceForm(forms.ModelForm):
+    class Meta:
+        model = GeneralInvoice
+        fields = [
+            'client_name', 'client_email', 'client_phone', 'client_address',
+            'service_description', 'amount', 'tax_rate', 'status',
+            'email_subject', 'email_body'
+        ]
+        widgets = {
+            'client_name': forms.TextInput(attrs={'class': 'oh-form__input', 'placeholder': 'Client Name'}),
+            'client_email': forms.EmailInput(attrs={'class': 'oh-form__input', 'placeholder': 'client@example.com'}),
+            'client_phone': forms.TextInput(attrs={'class': 'oh-form__input', 'placeholder': '+1234567890'}),
+            'client_address': forms.Textarea(attrs={'class': 'oh-form__textarea', 'rows': 3, 'placeholder': 'Client Address'}),
+            'service_description': forms.Textarea(attrs={'class': 'oh-form__textarea', 'rows': 4, 'placeholder': 'Description of services provided'}),
+            'amount': forms.NumberInput(attrs={'class': 'oh-form__input', 'step': '0.01', 'min': '0'}),
+            'tax_rate': forms.NumberInput(attrs={'class': 'oh-form__input', 'step': '0.01', 'min': '0', 'max': '100'}),
+            'status': forms.Select(attrs={'class': 'oh-form__input'}),
+            'email_subject': forms.TextInput(attrs={'class': 'oh-form__input', 'placeholder': 'Invoice email subject'}),
+            'email_body': forms.Textarea(attrs={'class': 'oh-form__textarea', 'rows': 6, 'placeholder': 'Email message body'}),
+        }

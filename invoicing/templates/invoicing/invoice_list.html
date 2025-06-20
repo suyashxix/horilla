@@ -1,72 +1,623 @@
-
 {% load i18n %}
 {% load static %}
 {% load widget_tweaks %}
-<link href="{% static 'invoicing/css/invoicing.css' %}" rel="stylesheet">
-<script src="{% static 'invoicing/js/invoicing.js' %}"></script>
+
 {% block content %}
 <div class="oh-general__tab-target oh-profile-section">
     <div class="oh-profile-section__card">
+        <!-- Header Section -->
         <div class="oh-titlebar">
-            <h3 class="oh-title">{% trans "Invoices" %}</h3>
-        </div>
-        <div class="row mb-3">
-            <div class="col-md-4">
-                <input type="text" class="form-control" placeholder="{% trans 'Search invoices...' %}" id="invoiceSearch">
-            </div>
-            <div class="col-md-3">
-                <select class="form-select" id="statusFilter">
-                    <option value="">{% trans "All Statuses" %}</option>
-                    <option value="draft">{% trans "Draft" %}</option>
-                    <option value="sent">{% trans "Sent" %}</option>
-                    <option value="paid">{% trans "Paid" %}</option>
-                </select>
-            </div>
-        </div>
-        <div class="oh-table-container">
-            <table class="oh-table">
-                <thead>
-                    <tr>
-                        <th>{% trans "Invoice Number" %}</th>
-                        <th>{% trans "Client" %}</th>
-                        <th>{% trans "Amount" %}</th>
-                        <th>{% trans "Due Date" %}</th>
-                        <th>{% trans "Status" %}</th>
-                        <th>{% trans "Actions" %}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for invoice in invoices %}
-                    <tr>
-                        <td>{{ invoice.invoice_number }}</td>
-                        <td>{{ invoice.placement.client.name }}</td>
-                        <td>₹{{ invoice.total_amount|floatformat:2 }}</td>
-                        <td>{{ invoice.due_date }}</td>
-                        <td>
-                            <span class="badge bg-{% if invoice.status == 'paid' %}success{% elif invoice.status == 'sent' %}warning{% else %}secondary{% endif %}">
-                                {{ invoice.get_status_display }}
-                            </span>
-                        </td>
-                        <td>
-                            <a href="{% url 'invoicing:invoice_detail' invoice.id %}" class="oh-btn oh-btn--secondary oh-btn--sm">
-                                {% trans "View" %}
+            <div class="d-flex justify-content-between align-items-center w-100">
+                <h3 class="oh-title mb-0">
+                    <i class="oh-icon-file-text me-2"></i>{% trans "Invoices" %}
+                </h3>
+                <div class="oh-titlebar__actions">
+                    <span class="badge bg-info me-2">{{ invoices|length }} {% trans "Total" %}</span>
+                    <div class="oh-dropdown">
+                        <button class="oh-btn oh-btn--primary oh-dropdown__toggle">
+                            <i class="oh-icon-plus"></i> {% trans "Create Invoice" %}
+                        </button>
+                        <div class="oh-dropdown__content">
+                            <a href="{% url 'invoicing:placement_list' %}" class="oh-dropdown__item">
+                                <i class="oh-icon-users"></i> {% trans "Recruitment Invoice" %}
                             </a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="text-center oh-text--muted">
-                            {% trans "No invoices found" %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            <a href="{% url 'invoicing:general_invoice_create' %}" class="oh-dropdown__item">
+                                <i class="oh-icon-file-text"></i> {% trans "General Invoice" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters and Search Section -->
+        <div class="oh-card mb-4">
+            <div class="oh-card__body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="oh-form__group">
+                            <label class="oh-form__label">{% trans "Search" %}</label>
+                            <div class="oh-form__input-group">
+                                <span class="oh-form__input-group-text">
+                                    <i class="oh-icon-search"></i>
+                                </span>
+                                <input type="text" 
+                                       class="oh-form__input" 
+                                       id="invoiceSearch" 
+                                       placeholder="{% trans 'Search by invoice number, client name...' %}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="oh-form__group">
+                            <label class="oh-form__label">{% trans "Type" %}</label>
+                            <select class="oh-form__input" id="typeFilter">
+                                <option value="">{% trans "All Types" %}</option>
+                                <option value="recruitment">{% trans "Recruitment" %}</option>
+                                <option value="general">{% trans "General" %}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="oh-form__group">
+                            <label class="oh-form__label">{% trans "Status" %}</label>
+                            <select class="oh-form__input" id="statusFilter">
+                                <option value="">{% trans "All Statuses" %}</option>
+                                <option value="draft">{% trans "Draft" %}</option>
+                                <option value="ready_to_send">{% trans "Ready to Send" %}</option>
+                                <option value="sent">{% trans "Sent" %}</option>
+                                <option value="paid">{% trans "Paid" %}</option>
+                                <option value="overdue">{% trans "Overdue" %}</option>
+                                <option value="cancelled">{% trans "Cancelled" %}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="oh-form__group">
+                            <label class="oh-form__label">{% trans "Date Range" %}</label>
+                            <select class="oh-form__input" id="dateFilter">
+                                <option value="">{% trans "All Dates" %}</option>
+                                <option value="today">{% trans "Today" %}</option>
+                                <option value="week">{% trans "This Week" %}</option>
+                                <option value="month">{% trans "This Month" %}</option>
+                                <option value="overdue">{% trans "Overdue" %}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="oh-form__group">
+                            <label class="oh-form__label">&nbsp;</label>
+                            <button class="oh-btn oh-btn--light w-100" id="clearFilters">
+                                <i class="oh-icon-refresh"></i> {% trans "Clear" %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="row mb-4">
+            <div class="col-md-2">
+                <div class="oh-card oh-card--stats">
+                    <div class="oh-card__body text-center">
+                        <div class="oh-stats__number text-info" id="recruitmentCount">0</div>
+                        <div class="oh-stats__label">{% trans "Recruitment" %}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="oh-card oh-card--stats">
+                    <div class="oh-card__body text-center">
+                        <div class="oh-stats__number text-success" id="generalCount">0</div>
+                        <div class="oh-stats__label">{% trans "General" %}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="oh-card oh-card--stats">
+                    <div class="oh-card__body text-center">
+                        <div class="oh-stats__number text-secondary" id="draftCount">0</div>
+                        <div class="oh-stats__label">{% trans "Draft" %}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="oh-card oh-card--stats">
+                    <div class="oh-card__body text-center">
+                        <div class="oh-stats__number text-warning" id="sentCount">0</div>
+                        <div class="oh-stats__label">{% trans "Sent" %}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="oh-card oh-card--stats">
+                    <div class="oh-card__body text-center">
+                        <div class="oh-stats__number text-success" id="paidCount">0</div>
+                        <div class="oh-stats__label">{% trans "Paid" %}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="oh-card oh-card--stats">
+                    <div class="oh-card__body text-center">
+                        <div class="oh-stats__number text-danger" id="overdueCount">0</div>
+                        <div class="oh-stats__label">{% trans "Overdue" %}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Invoices Table -->
+        <div class="oh-table-container">
+            <div class="table-responsive">
+                <table class="oh-table" id="invoicesTable">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-sort="invoice_number">
+                                {% trans "Invoice Number" %} <i class="oh-icon-sort"></i>
+                            </th>
+                            <th class="sortable" data-sort="type">
+                                {% trans "Type" %} <i class="oh-icon-sort"></i>
+                            </th>
+                            <th class="sortable" data-sort="client">
+                                {% trans "Client" %} <i class="oh-icon-sort"></i>
+                            </th>
+                            <th class="sortable" data-sort="service">
+                                {% trans "Service/Candidate" %} <i class="oh-icon-sort"></i>
+                            </th>
+                            <th class="sortable" data-sort="amount">
+                                {% trans "Amount" %} <i class="oh-icon-sort"></i>
+                            </th>
+                            <th class="sortable" data-sort="due_date">
+                                {% trans "Due Date" %} <i class="oh-icon-sort"></i>
+                            </th>
+                            <th class="sortable" data-sort="status">
+                                {% trans "Status" %} <i class="oh-icon-sort"></i>
+                            </th>
+                            <th>{% trans "Actions" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody id="invoicesTableBody">
+                        {% for item in invoices %}
+                        <tr class="invoice-row" 
+                            data-invoice-number="{{ item.invoice.invoice_number|lower }}"
+                            data-client="{{ item.client_name|lower }}"
+                            data-service="{% if item.type == 'recruitment' %}{{ item.invoice.placement.candidate.name|lower }}{% else %}{{ item.invoice.service_description|lower }}{% endif %}"
+                            data-status="{{ item.invoice.status }}"
+                            data-type="{{ item.type }}"
+                            data-amount="{{ item.invoice.total_amount }}"
+                            data-due-date="{% if item.invoice.due_date %}{{ item.invoice.due_date|date:'Y-m-d' }}{% endif %}"
+                            data-issue-date="{{ item.invoice.issue_date|date:'Y-m-d' }}">
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="oh-avatar oh-avatar--sm me-2">
+                                        {% if item.type == 'recruitment' %}
+                                            <i class="oh-icon-users"></i>
+                                        {% else %}
+                                            <i class="oh-icon-file-text"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <strong>{{ item.invoice.invoice_number }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ item.invoice.issue_date }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if item.type == 'recruitment' %}
+                                    <span class="badge bg-info">{% trans "Recruitment" %}</span>
+                                {% else %}
+                                    <span class="badge bg-success">{% trans "General" %}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div>
+                                    <strong>{{ item.client_name }}</strong>
+                                    <br>
+                                    {% if item.type == 'recruitment' %}
+                                        <small class="text-muted">{{ item.invoice.placement.client.contact_person }}</small>
+                                    {% else %}
+                                        <small class="text-muted">{{ item.invoice.client_email }}</small>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    {% if item.type == 'recruitment' %}
+                                        <strong>{{ item.invoice.placement.candidate.name }}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ item.invoice.placement.position }}</small>
+                                    {% else %}
+                                        <strong>{% trans "General Service" %}</strong>
+                                        <br>
+                                        <small class="text-muted">{{ item.invoice.service_description|truncatechars:50 }}</small>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="text-end">
+                                    <strong>₹{{ item.invoice.total_amount|floatformat:2 }}</strong>
+                                    <br>
+                                    <small class="text-muted">+{{ item.invoice.tax_rate }}% tax</small>
+                                </div>
+                            </td>
+                            <td>
+                                {% if item.invoice.due_date %}
+                                    <div class="{% if item.invoice.status == 'overdue' %}text-danger{% elif item.invoice.due_date < today %}text-warning{% endif %}">
+                                        {{ item.invoice.due_date }}
+                                        {% if item.invoice.status == 'overdue' %}
+                                            <br><small class="text-danger">{% trans "Overdue" %}</small>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">{% trans "Not Set" %}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge badge-{{ item.invoice.status }} 
+                                    bg-{% if item.invoice.status == 'paid' %}success
+                                    {% elif item.invoice.status == 'sent' %}warning
+                                    {% elif item.invoice.status == 'overdue' %}danger
+                                    {% elif item.invoice.status == 'ready_to_send' %}info
+                                    {% else %}secondary{% endif %}">
+                                    {{ item.invoice.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="oh-dropdown">
+                                    <button class="oh-btn oh-btn--light oh-btn--sm oh-dropdown__toggle">
+                                        <i class="oh-icon-more"></i>
+                                    </button>
+                                    <div class="oh-dropdown__content">
+                                        <a href="{{ item.detail_url }}" class="oh-dropdown__item">
+                                            <i class="oh-icon-eye"></i> {% trans "View Details" %}
+                                        </a>
+                                        {% if item.type == 'recruitment' %}
+                                            <a href="{% url 'invoicing:invoice_pdf' item.invoice.id %}" class="oh-dropdown__item">
+                                                <i class="oh-icon-download"></i> {% trans "Download PDF" %}
+                                            </a>
+                                        {% else %}
+                                            <a href="{% url 'invoicing:general_invoice_pdf' item.invoice.id %}" class="oh-dropdown__item">
+                                                <i class="oh-icon-download"></i> {% trans "Download PDF" %}
+                                            </a>
+                                        {% endif %}
+                                        {% if item.invoice.status != 'sent' and item.invoice.status != 'paid' %}
+                                        <a href="#" class="oh-dropdown__item" onclick="sendInvoice({{ item.invoice.id }}, '{{ item.type }}')">
+                                            <i class="oh-icon-mail"></i> {% trans "Send Email" %}
+                                        </a>
+                                        {% endif %}
+                                        {% if item.invoice.status != 'paid' %}
+                                        <a href="#" class="oh-dropdown__item text-success" onclick="markAsPaid({{ item.invoice.id }}, '{{ item.type }}')">
+                                            <i class="oh-icon-check"></i> {% trans "Mark as Paid" %}
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr id="noInvoicesRow">
+                            <td colspan="8" class="text-center py-5">
+                                <div class="oh-empty-state">
+                                    <i class="oh-icon-file-text oh-empty-state__icon"></i>
+                                    <h4 class="oh-empty-state__title">{% trans "No invoices found" %}</h4>
+                                    <p class="oh-empty-state__text">{% trans "Create your first invoice to get started" %}</p>
+                                    <div class="mt-3">
+                                        <a href="{% url 'invoicing:placement_list' %}" class="oh-btn oh-btn--primary me-2">
+                                            {% trans "Recruitment Invoice" %}
+                                        </a>
+                                        <a href="{% url 'invoicing:general_invoice_create' %}" class="oh-btn oh-btn--success">
+                                            {% trans "General Invoice" %}
+                                        </a>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- No Results Message (Hidden by default) -->
+        <div id="noResultsMessage" class="text-center py-5" style="display: none;">
+            <div class="oh-empty-state">
+                <i class="oh-icon-search oh-empty-state__icon"></i>
+                <h4 class="oh-empty-state__title">{% trans "No invoices match your search" %}</h4>
+                <p class="oh-empty-state__text">{% trans "Try adjusting your filters or search terms" %}</p>
+                <button class="oh-btn oh-btn--secondary" id="clearSearchBtn">
+                    {% trans "Clear Search" %}
+                </button>
+            </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block js %}
-<script src="{% static 'invoicing/js/invoicing.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('invoiceSearch');
+    const statusFilter = document.getElementById('statusFilter');
+    const typeFilter = document.getElementById('typeFilter');
+    const dateFilter = document.getElementById('dateFilter');
+    const clearFiltersBtn = document.getElementById('clearFilters');
+    const clearSearchBtn = document.getElementById('clearSearchBtn');
+    const tableBody = document.getElementById('invoicesTableBody');
+    const noResultsMessage = document.getElementById('noResultsMessage');
+    const invoiceRows = document.querySelectorAll('.invoice-row');
+    
+    // Update stats
+    function updateStats() {
+        const visibleRows = document.querySelectorAll('.invoice-row:not([style*="display: none"])');
+        const stats = {
+            recruitment: 0,
+            general: 0,
+            draft: 0,
+            sent: 0,
+            paid: 0,
+            overdue: 0
+        };
+        
+        visibleRows.forEach(row => {
+            const status = row.dataset.status;
+            const type = row.dataset.type;
+            
+            if (stats.hasOwnProperty(status)) {
+                stats[status]++;
+            }
+            if (stats.hasOwnProperty(type)) {
+                stats[type]++;
+            }
+        });
+        
+        document.getElementById('recruitmentCount').textContent = stats.recruitment;
+        document.getElementById('generalCount').textContent = stats.general;
+        document.getElementById('draftCount').textContent = stats.draft;
+        document.getElementById('sentCount').textContent = stats.sent;
+        document.getElementById('paidCount').textContent = stats.paid;
+        document.getElementById('overdueCount').textContent = stats.overdue;
+    }
+    
+    // Filter function
+    function filterInvoices() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const statusValue = statusFilter.value;
+        const typeValue = typeFilter.value;
+        const dateValue = dateFilter.value;
+        const today = new Date();
+        
+        let visibleCount = 0;
+        
+        invoiceRows.forEach(row => {
+            let show = true;
+            
+            // Search filter
+            if (searchTerm) {
+                const invoiceNumber = row.dataset.invoiceNumber;
+                const client = row.dataset.client;
+                const service = row.dataset.service;
+                
+                if (!invoiceNumber.includes(searchTerm) && 
+                    !client.includes(searchTerm) && 
+                    !service.includes(searchTerm)) {
+                    show = false;
+                }
+            }
+            
+            // Status filter
+            if (statusValue && row.dataset.status !== statusValue) {
+                show = false;
+            }
+            
+            // Type filter
+            if (typeValue && row.dataset.type !== typeValue) {
+                show = false;
+            }
+            
+            // Date filter
+            if (dateValue) {
+                const issueDate = new Date(row.dataset.issueDate);
+                const dueDate = new Date(row.dataset.dueDate);
+                
+                switch(dateValue) {
+                    case 'today':
+                        if (issueDate.toDateString() !== today.toDateString()) {
+                            show = false;
+                        }
+                        break;
+                    case 'week':
+                        const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        if (issueDate < weekAgo) {
+                            show = false;
+                        }
+                        break;
+                    case 'month':
+                        const monthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+                        if (issueDate < monthAgo) {
+                            show = false;
+                        }
+                        break;
+                    case 'overdue':
+                        if (dueDate >= today || row.dataset.status === 'paid') {
+                            show = false;
+                        }
+                        break;
+                }
+            }
+            
+            row.style.display = show ? '' : 'none';
+            if (show) visibleCount++;
+        });
+        
+        // Show/hide no results message
+        noResultsMessage.style.display = visibleCount === 0 ? 'block' : 'none';
+        tableBody.style.display = visibleCount === 0 ? 'none' : '';
+        
+        updateStats();
+    }
+    
+    // Clear filters
+    function clearFilters() {
+        searchInput.value = '';
+        statusFilter.value = '';
+        typeFilter.value = '';
+        dateFilter.value = '';
+        filterInvoices();
+    }
+    
+    // Event listeners
+    searchInput.addEventListener('input', filterInvoices);
+    statusFilter.addEventListener('change', filterInvoices);
+    typeFilter.addEventListener('change', filterInvoices);
+    dateFilter.addEventListener('change', filterInvoices);
+    clearFiltersBtn.addEventListener('click', clearFilters);
+    clearSearchBtn.addEventListener('click', clearFilters);
+    
+    // Initialize stats
+    updateStats();
+    
+    // Sorting functionality
+    document.querySelectorAll('.sortable').forEach(header => {
+        header.addEventListener('click', function() {
+            const sortBy = this.dataset.sort;
+            const rows = Array.from(invoiceRows);
+            const isAscending = !this.classList.contains('sort-desc');
+            
+            // Remove sort classes from all headers
+            document.querySelectorAll('.sortable').forEach(h => {
+                h.classList.remove('sort-asc', 'sort-desc');
+            });
+            
+            // Add sort class to current header
+            this.classList.add(isAscending ? 'sort-asc' : 'sort-desc');
+            
+            // Sort rows
+            rows.sort((a, b) => {
+                let aVal = a.dataset[sortBy] || '';
+                let bVal = b.dataset[sortBy] || '';
+                
+                if (sortBy === 'amount') {
+                    aVal = parseFloat(aVal) || 0;
+                    bVal = parseFloat(bVal) || 0;
+                }
+                
+                if (aVal < bVal) return isAscending ? -1 : 1;
+                if (aVal > bVal) return isAscending ? 1 : -1;
+                return 0;
+            });
+            
+            // Reorder DOM
+            rows.forEach(row => tableBody.appendChild(row));
+        });
+    });
+});
+
+// Action functions
+function sendInvoice(invoiceId, type) {
+    // Implement send invoice functionality based on type
+    console.log('Send invoice:', invoiceId, 'Type:', type);
+}
+
+function markAsPaid(invoiceId, type) {
+    if (confirm('{% trans "Are you sure you want to mark this invoice as paid?" %}')) {
+        let url;
+        if (type === 'recruitment') {
+            url = `/invoicing/invoices/${invoiceId}/mark-paid/`;
+        } else {
+            url = `/invoicing/general-invoices/${invoiceId}/mark-paid/`;
+        }
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'action=mark_paid'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        });
+    }
+}
+</script>
+
+<style>
+.oh-card--stats {
+    border-left: 4px solid var(--oh-primary);
+}
+
+.oh-stats__number {
+    font-size: 2rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.oh-stats__label {
+    font-size: 0.875rem;
+    color: var(--oh-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.sortable:hover {
+    background-color: var(--oh-gray-100);
+}
+
+.sortable.sort-asc i:after {
+    content: " ↑";
+}
+
+.sortable.sort-desc i:after {
+    content: " ↓";
+}
+
+.oh-empty-state {
+    padding: 2rem;
+}
+
+.oh-empty-state__icon {
+    font-size: 3rem;
+    color: var(--oh-text-muted);
+    margin-bottom: 1rem;
+}
+
+.oh-empty-state__title {
+    color: var(--oh-text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.oh-empty-state__text {
+    color: var(--oh-text-muted);
+    margin-bottom: 1rem;
+}
+
+.badge-draft { background-color: var(--oh-secondary) !important; }
+.badge-sent { background-color: var(--oh-warning) !important; }
+.badge-paid { background-color: var(--oh-success) !important; }
+.badge-overdue { background-color: var(--oh-danger) !important; }
+.badge-ready_to_send { background-color: var(--oh-info) !important; }
+</style>
 {% endblock %}
+<script>
+// Define global variables for JavaScript
+window.INVOICE_CONFIG = {
+    csrfToken: '{{ csrf_token }}',
+    markPaidUrl: '{% url "invoicing:mark_invoice_paid" 0 %}'.replace('0', '{id}'),
+    generalMarkPaidUrl: '{% url "invoicing:general_invoice_mark_paid" 0 %}'.replace('0', '{id}')
+};
+</script>
+<script src="{% static 'invoicing/js/invoice-actions.js' %}"></script>

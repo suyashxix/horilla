@@ -1,0 +1,122 @@
+{% load i18n %}
+{% load static %}
+
+{% block content %}
+<div class="oh-general__tab-target oh-profile-section">
+    <div class="oh-profile-section__card">
+        <div class="oh-titlebar">
+            <h3 class="oh-title">{{ title }}</h3>
+            <div class="oh-titlebar__actions">
+                <a href="{% url 'invoicing:invoice_list' %}" class="oh-btn oh-btn--secondary">
+                    <i class="oh-icon-arrow-left"></i> {% trans "Back to Invoices" %}
+                </a>
+                <a href="{% url 'invoicing:general_invoice_pdf' invoice.id %}" class="oh-btn oh-btn--primary">
+                    <i class="oh-icon-download"></i> {% trans "Download PDF" %}
+                </a>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-8">
+                <!-- Invoice Header -->
+                <div class="oh-card">
+                    <div class="oh-card__header">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h4 class="mb-1">{{ invoice.invoice_number }}</h4>
+                                <small class="text-muted">{% trans "Issue Date" %}: {{ invoice.issue_date }}</small>
+                            </div>
+                            <span class="badge bg-{% if invoice.status == 'paid' %}success{% elif invoice.status == 'sent' %}warning{% elif invoice.status == 'overdue' %}danger{% else %}secondary{% endif %} badge-lg">
+                                {{ invoice.get_status_display }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="oh-card__body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>{% trans "Bill To" %}</h5>
+                                <address>
+                                    <strong>{{ invoice.client_name }}</strong><br>
+                                    {{ invoice.client_address|linebreaks }}
+                                    {% trans "Email" %}: {{ invoice.client_email }}<br>
+                                    {% if invoice.client_phone %}
+                                        {% trans "Phone" %}: {{ invoice.client_phone }}
+                                    {% endif %}
+                                </address>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>{% trans "Invoice Details" %}</h5>
+                                <p><strong>{% trans "Due Date" %}:</strong> {{ due_date_str }}</p>
+                                <p><strong>{% trans "Status" %}:</strong> {{ invoice.get_status_display }}</p>
+                                {% if invoice.payment_received_date %}
+                                <p><strong>{% trans "Payment Date" %}:</strong> {{ invoice.payment_received_date }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service Details -->
+                <div class="oh-card">
+                    <div class="oh-card__header">
+                        <h5>{% trans "Service Description" %}</h5>
+                    </div>
+                    <div class="oh-card__body">
+                        <p>{{ invoice.service_description|linebreaks }}</p>
+                    </div>
+                </div>
+
+                <!-- Invoice Summary -->
+                <div class="oh-card">
+                    <div class="oh-card__header">
+                        <h5>{% trans "Invoice Summary" %}</h5>
+                    </div>
+                    <div class="oh-card__body">
+                        <div class="table-responsive">
+                            <table class="table table-borderless">
+                                <tbody>
+                                    <tr>
+                                        <td><strong>{% trans "Service Amount" %}</strong></td>
+                                        <td class="text-end">₹{{ invoice.amount|floatformat:2 }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>{% trans "Tax" %} ({{ invoice.tax_rate }}%)</td>
+                                        <td class="text-end">₹{{ tax_amount|floatformat:2 }}</td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr class="border-top">
+                                        <td><strong>{% trans "Total Amount" %}</strong></td>
+                                        <td class="text-end"><strong class="h5">₹{{ invoice.total_amount|floatformat:2 }}</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-md-4">
+                <div class="oh-card">
+                    <div class="oh-card__header">
+                        <h5>{% trans "Quick Actions" %}</h5>
+                    </div>
+                    <div class="oh-card__body">
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'invoicing:general_invoice_pdf' invoice.id %}" class="oh-btn oh-btn--secondary">
+                                <i class="oh-icon-download"></i> {% trans "Download PDF" %}
+                            </a>
+                            {% if invoice.status != 'paid' %}
+                            <button class="oh-btn oh-btn--success">
+                                <i class="oh-icon-check"></i> {% trans "Mark as Paid" %}
+                            </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

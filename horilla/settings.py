@@ -110,6 +110,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "horilla.wsgi.application"
 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # or your SMTP server
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'suyashtri2006@gmail.com'
+EMAIL_HOST_PASSWORD = 'ittx teua woro pdrt'  # Use app password for Gmail
+DEFAULT_FROM_EMAIL = 'suyashtri2006@gmail.com'
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases

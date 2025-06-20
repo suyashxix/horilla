@@ -144,3 +144,70 @@ class InvoiceHistory(models.Model):
     
     class Meta:
         ordering = ['-changed_at']
+
+
+# invoicing/models.py - Add this new model
+class GeneralInvoice(models.Model):
+    """Separate model for general business invoices"""
+    invoice_number = models.CharField(max_length=50, unique=True, blank=True)
+    
+    # Client information
+    client_name = models.CharField(max_length=255)
+    client_email = models.EmailField()
+    client_phone = models.CharField(max_length=20, blank=True)
+    client_address = models.TextField()
+    
+    # Invoice details
+    service_description = models.TextField()
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=18.00)
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    
+    # Dates and status
+    issue_date = models.DateField(auto_now_add=True)
+    due_date = models.DateField(blank=True, null=True)
+    
+    STATUS_CHOICES = (
+        ('draft', 'Draft'),
+        ('sent', 'Sent'),
+        ('paid', 'Paid'),
+        ('overdue', 'Overdue'),
+        ('cancelled', 'Cancelled'),
+    )
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    
+    # Email fields
+    email_subject = models.CharField(max_length=255, blank=True)
+    email_body = models.TextField(blank=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    sent_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    # Payment tracking
+    payment_received_date = models.DateField(null=True, blank=True)
+    payment_notes = models.TextField(blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.invoice_number:
+            today = timezone.now().date()
+            today_invoices = GeneralInvoice.objects.filter(issue_date=today).count()
+            self.invoice_number = f"GEN-{today.strftime('%Y%m%d')}-{today_invoices + 1:03d}"
+        
+        if self.amount and self.tax_rate:
+            tax_amount = (self.amount * self.tax_rate) / 100
+            self.total_amount = self.amount + tax_amount
+        
+        if not self.due_date and self.issue_date:
+            self.due_date = self.issue_date + timedelta(days=30)
+        
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"General Invoice {self.invoice_number} - {self.client_name}"
+    
+    class Meta:
+        ordering = ['-created_at']
+
+

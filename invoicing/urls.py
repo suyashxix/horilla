@@ -20,5 +20,12 @@ urlpatterns = [
     path('invoices/create/<int:placement_id>/', views.invoice_create, name='invoice_create'),
     path('invoices/<int:invoice_id>/', views.invoice_detail, name='invoice_detail'),
     path('invoices/<int:invoice_id>/send/', views.send_invoice_email, name='send_invoice'),
+    path('invoices/<int:invoice_id>/pdf/', views.download_invoice_pdf, name='invoice_pdf'),
+    path('invoices/<int:invoice_id>/mark-paid/', views.mark_invoice_paid, name='mark_invoice_paid'),
+    path('invoices/<int:invoice_id>/send-email/', views.send_invoice_email, name='send_invoice_email'),
+
+    path('general-invoices/create/', views.general_invoice_create, name='general_invoice_create'),
+    path('general-invoices/<int:invoice_id>/', views.general_invoice_detail, name='general_invoice_detail'),
+    path('general-invoices/<int:invoice_id>/pdf/', views.general_invoice_pdf, name='general_invoice_pdf'),
     
 ]
