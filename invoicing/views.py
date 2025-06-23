@@ -48,6 +48,11 @@ def dashboard(request):
         'recent_invoices': recent_invoices,
         'eligible_count': eligible_count,
         'total_placements': eligible_placements.count(),
+        'breadcrumb_list': [
+            {'name': 'Horilla', 'url': '/'},
+            {'name': 'Invoicing', 'url': '/invoicing/dashboard/'},
+            {'name': 'Dashboard', 'url': ''}
+        ]
     }
     return render(request, 'invoicing/dashboard.html', context)
 
@@ -579,6 +584,11 @@ def invoice_list(request):
         'current_status': status,
         'current_type': invoice_type,
         'today': timezone.now().date(),
+        'breadcrumb_list': [
+            {'name': 'Horilla', 'url': '/'},
+            {'name': 'Invoicing', 'url': '/invoicing/dashboard/'},
+            {'name': 'Invoices', 'url': ''}
+        ]
     }
     return render(request, 'invoicing/invoice_list.html', context)
 
@@ -732,3 +742,20 @@ def general_invoice_pdf(request, invoice_id):
     response['Content-Length'] = len(pdf_data)
     
     return response
+def general_invoice_mark_paid(request, invoice_id):
+    """Mark general invoice as paid"""
+    if request.method == 'POST':
+        invoice = get_object_or_404(GeneralInvoice, id=invoice_id)
+        old_status = invoice.status
+        invoice.status = 'paid'
+        invoice.payment_received_date = timezone.now().date()
+        invoice.payment_notes = request.POST.get('payment_notes', 'Marked as paid via dashboard')
+        invoice.save()
+        
+        return JsonResponse({'success': True, 'message': 'General invoice marked as paid'})
+    
+    return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+def react_invoice_view(request):
+    return render(request, 'invoicing/invoice_react.html')

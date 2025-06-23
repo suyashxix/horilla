@@ -5,7 +5,7 @@ app_name = 'invoicing'
 
 urlpatterns = [
     # Dashboard
-    path('', views.dashboard, name='dashboard'),
+    path('dashboard/', views.dashboard, name='dashboard'),
     
     # Clients
     path('clients/', views.client_list, name='client_list'),
@@ -27,5 +27,9 @@ urlpatterns = [
     path('general-invoices/create/', views.general_invoice_create, name='general_invoice_create'),
     path('general-invoices/<int:invoice_id>/', views.general_invoice_detail, name='general_invoice_detail'),
     path('general-invoices/<int:invoice_id>/pdf/', views.general_invoice_pdf, name='general_invoice_pdf'),
-    
+    path('general-invoices/<int:invoice_id>/mark-paid/', views.general_invoice_mark_paid, name='general_invoice_mark_paid'),
+
+
+    path('', views.dashboard, name='index'),
+
 ]
