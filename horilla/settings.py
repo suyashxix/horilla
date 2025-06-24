@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 import os
 from os.path import join
 from pathlib import Path
+from datetime import timedelta
 
 import environ
 from django.contrib.messages import constants as messages
@@ -43,20 +44,31 @@ DEBUG = env("DEBUG")
 
 ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 
+CORS_ALLOW_ALL_ORIGINS = True
+
 # Application definition
 
 INSTALLED_APPS = [
+   # Django apps
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
+    # Third-party apps
     "notifications",
     "mathfilters",
     "corsheaders",
     "simple_history",
     "django_filters",
+    "widget_tweaks",
+    "django_apscheduler",
+  
+    "rest_framework_simplejwt.token_blacklist",
+
+    # Horilla core apps
     "base",
     "employee",
     "recruitment",
@@ -66,8 +78,24 @@ INSTALLED_APPS = [
     "asset",
     "attendance",
     "payroll",
-    "widget_tweaks",
-    "django_apscheduler",
+    "horilla.apps.HorillaConfig",
+
+    # Horilla addons (was in horilla_apps.py)
+    "accessibility",
+    "horilla_audit",
+    "horilla_widgets",
+    "horilla_crumbs",
+    "horilla_documents",
+    "horilla_views",
+    "horilla_automations",
+    "auditlog",
+    "biometric",
+    "helpdesk",
+    "offboarding",
+    "horilla_backup",
+    "project",
+    "invoicing",
+    
 ]
 APSCHEDULER_DATETIME_FORMAT = "N j, Y, f:s a"
 
@@ -107,6 +135,18 @@ TEMPLATES = [
         },
     },
 ]
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
 
 WSGI_APPLICATION = "horilla.wsgi.application"
 
@@ -171,6 +211,11 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
+
+if "auditlog" in INSTALLED_APPS:
+    MIDDLEWARE.append("auditlog.middleware.AuditlogMiddleware")
+
+
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
@@ -248,3 +293,5 @@ if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+   
+
