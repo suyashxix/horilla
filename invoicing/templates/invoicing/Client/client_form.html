@@ -1,0 +1,127 @@
+{% extends 'index.html' %}
+{% load i18n %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}
+{% if form_action == 'edit' %}
+    {% trans "Edit Client" %} - {{ client.name }}
+{% else %}
+    {% trans "Create Client" %}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<main :class="sidebarOpen ? 'oh-main__sidebar-visible' : ''">
+    <div class="oh-wrapper">
+        <div class="oh-dashboard row">
+            <div class="oh-dashboard__left col-12">
+                <!-- Header Section -->
+                <div class="oh-titlebar mb-4">
+                    <div class="d-flex align-items-center">
+                        <a href="{% if form_action == 'edit' %}{% url 'invoicing:client_detail' client.id %}{% else %}{% url 'invoicing:client_list' %}{% endif %}" class="oh-btn oh-btn--light me-3">
+                            <i class="oh-icon-arrow-left"></i>
+                        </a>
+                        <h3 class="oh-title mb-0">
+                            <i class="oh-icon-building me-2"></i>
+                            {% if form_action == 'edit' %}
+                                {% trans "Edit Client" %}
+                            {% else %}
+                                {% trans "Create New Client" %}
+                            {% endif %}
+                        </h3>
+                    </div>
+                </div>
+
+                <!-- Client Form -->
+                <div class="oh-card">
+                    <div class="oh-card__body">
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="oh-form__group mb-3">
+                                        <label class="oh-form__label" for="name">{% trans "Company Name" %} *</label>
+                                        <input type="text" 
+                                               class="oh-form__input" 
+                                               id="name" 
+                                               name="name" 
+                                               value="{{ client.name|default:'' }}" 
+                                               required>
+                                    </div>
+                                    
+                                    <div class="oh-form__group mb-3">
+                                        <label class="oh-form__label" for="contact_person">{% trans "Contact Person" %}</label>
+                                        <input type="text" 
+                                               class="oh-form__input" 
+                                               id="contact_person" 
+                                               name="contact_person" 
+                                               value="{{ client.contact_person|default:'' }}">
+                                    </div>
+                                    
+                                    <div class="oh-form__group mb-3">
+                                        <label class="oh-form__label" for="email">{% trans "Email" %} *</label>
+                                        <input type="email" 
+                                               class="oh-form__input" 
+                                               id="email" 
+                                               name="email" 
+                                               value="{{ client.email|default:'' }}" 
+                                               required>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="oh-form__group mb-3">
+                                        <label class="oh-form__label" for="phone">{% trans "Phone" %}</label>
+                                        <input type="tel" 
+                                               class="oh-form__input" 
+                                               id="phone" 
+                                               name="phone" 
+                                               value="{{ client.phone|default:'' }}">
+                                    </div>
+                                    
+                                    <div class="oh-form__group mb-3">
+                                        <label class="oh-form__label" for="address">{% trans "Address" %}</label>
+                                        <textarea class="oh-form__input" 
+                                                  id="address" 
+                                                  name="address" 
+                                                  rows="3">{{ client.address|default:'' }}</textarea>
+                                    </div>
+                                    
+                                    <div class="oh-form__group mb-3">
+                                        <div class="oh-form__check">
+                                            <input type="checkbox" 
+                                                   class="oh-form__check-input" 
+                                                   id="is_active" 
+                                                   name="is_active"
+                                                   {% if client.is_active or not client %}checked{% endif %}>
+                                            <label class="oh-form__check-label" for="is_active">
+                                                {% trans "Active Client" %}
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="oh-form__actions mt-4">
+                                <button type="submit" class="oh-btn oh-btn--primary">
+                                    <i class="oh-icon-save me-2"></i>
+                                    {% if form_action == 'edit' %}
+                                        {% trans "Update Client" %}
+                                    {% else %}
+                                        {% trans "Create Client" %}
+                                    {% endif %}
+                                </button>
+                                <a href="{% if form_action == 'edit' %}{% url 'invoicing:client_detail' client.id %}{% else %}{% url 'invoicing:client_list' %}{% endif %}" 
+                                   class="oh-btn oh-btn--light">
+                                    {% trans "Cancel" %}
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

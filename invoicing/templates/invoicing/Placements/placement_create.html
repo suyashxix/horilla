@@ -1,0 +1,462 @@
+{% extends 'index.html' %}
+{% load i18n %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}{% trans "Create New Placement" %}{% endblock %}
+
+{% block content %}
+<main :class="sidebarOpen ? 'oh-main__sidebar-visible' : ''">
+    <div class="oh-wrapper">
+        <div class="oh-dashboard row">
+            <div class="oh-dashboard__left col-12">
+                <!-- Header Section -->
+                <div class="oh-titlebar mb-4">
+                    <div class="d-flex align-items-center">
+                        <a href="{% url 'invoicing:placement_list' %}" class="oh-btn oh-btn--light me-3">
+                            <i class="oh-icon-arrow-left"></i>
+                        </a>
+                        <h3 class="oh-title mb-0">
+                            <i class="oh-icon-users me-2"></i>{% trans "Create New Placement" %}
+                        </h3>
+                    </div>
+                </div>
+
+                <!-- Placement Form -->
+                <div class="oh-card">
+                    <div class="oh-card__body">
+                        <form method="post" id="placementForm">
+                            {% csrf_token %}
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <!-- Candidate Selection -->
+                                    <div class="oh-form__group mb-3">
+                                        <label class="oh-form__label" for="candidate">{% trans "Candidate" %} *</label>
+                                        <select class="oh-form__input" id="candidate" name="candidate" required>
+                                            <option value="">{% trans "Select Candidate" %}</option>
+                                            {% for candidate in candidates %}
+                                            <option value="{{ candidate.id }}" 
+                                                    {% if selected_candidate and candidate.id == selected_candidate.id %}selected{% endif %}
+                                                    data-experience="{{ candidate.experience_level }}" 
+                                                    data-skills="{{ candidate.skills|truncatechars:50 }}">
+                                                {{ candidate.name }} - {{ candidate.current_position|default:"No Position" }} ({{ candidate.experience_years }} yrs)
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                        <small class="oh-form__help">
+                                            <a href="#" onclick="openCandidateModal()">{% trans "Create New Candidate" %}</a> | 
+                                            <a href="{% url 'invoicing:candidate_list' %}">{% trans "Manage Candidates" %}</a>
+                                        </small>
+                                    </div>
+                                    
+                                    <!-- Client Selection -->
+                                    <div class="oh-form__group mb-3">
+                                        <label class="oh-form__label" for="client">{% trans "Client" %} *</label>
+                                        <select class="oh-form__input" id="client" name="client" required>
+                                            <option value="">{% trans "Select Client" %}</option>
+                                            {% for client in clients %}
+                                            <option value="{{ client.id }}">{{ client.name }} - {{ client.contact_person|default:"No Contact" }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <small class="oh-form__help">
+                                            <a href="#" onclick="openClientModal()">{% trans "Create New Client" %}</a>
+                                        </small>
+                                    </div>
+                                    
+                                    <!-- Position -->
+                                    <div class="oh-form__group mb-3">
+                                        <label class="oh-form__label" for="position">{% trans "Position" %} *</label>
+                                        <input type="text" 
+                                               class="oh-form__input" 
+                                               id="position" 
+                                               name="position" 
+                                               required
+                                               placeholder="{% trans 'e.g. Senior Software Developer' %}">
+                                    </div>
+
+                                    <!-- Placement Type -->
+                                    <div class="oh-form__group mb-3">
+                                        <label class="oh-form__label" for="placement_type">{% trans "Placement Type" %}</label>
+                                        <select class="oh-form__input" id="placement_type" name="placement_type">
+                                            <option value="permanent">{% trans "Permanent" %}</option>
+                                            <option value="contract">{% trans "Contract" %}</option>
+                                            <option value="temp_to_perm">{% trans "Temp to Permanent" %}</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <!-- Joining Date -->
+                                    <div class="oh-form__group mb-3">
+                                        <label class="oh-form__label" for="joining_date">{% trans "Joining Date" %} *</label>
+                                        <input type="date" 
+                                               class="oh-form__input" 
+                                               id="joining_date" 
+                                               name="joining_date" 
+                                               required>
+                                    </div>
+                                    
+                                    <!-- Notice Period -->
+                                    <div class="oh-form__group mb-3">
+                                        <label class="oh-form__label" for="notice_period_days">{% trans "Notice Period (Days)" %}</label>
+                                        <select class="oh-form__input" id="notice_period_days" name="notice_period_days">
+                                            <option value="0">{% trans "Immediate (0 days)" %}</option>
+                                            <option value="15">{% trans "15 days" %}</option>
+                                            <option value="30">{% trans "30 days" %}</option>
+                                            <option value="45">{% trans "45 days" %}</option>
+                                            <option value="60">{% trans "60 days" %}</option>
+                                            <option value="90" selected>{% trans "90 days" %}</option>
+                                        </select>
+                                        <small class="oh-form__help">{% trans "Days until invoice can be generated after joining" %}</small>
+                                    </div>
+                                    
+                                    <!-- Placement Fee -->
+                                    <div class="oh-form__group mb-3">
+                                        <label class="oh-form__label" for="placement_fee">{% trans "Placement Fee" %} *</label>
+                                        <div class="oh-form__input-group">
+                                            <span class="oh-form__input-group-text">₹</span>
+                                            <input type="number" 
+                                                   class="oh-form__input" 
+                                                   id="placement_fee" 
+                                                   name="placement_fee" 
+                                                   step="0.01"
+                                                   required
+                                                   placeholder="100000">
+                                        </div>
+                                    </div>
+
+                                    <!-- Offered Salary -->
+                                    <div class="oh-form__group mb-3">
+                                        <label class="oh-form__label" for="offered_salary">{% trans "Offered Salary" %}</label>
+                                        <div class="oh-form__input-group">
+                                            <span class="oh-form__input-group-text">₹</span>
+                                            <input type="number" 
+                                                   class="oh-form__input" 
+                                                   id="offered_salary" 
+                                                   name="offered_salary" 
+                                                   step="0.01"
+                                                   placeholder="1000000">
+                                        </div>
+                                        <small class="oh-form__help">{% trans "Annual salary offered to the candidate" %}</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Candidate Preview Card -->
+                            <div id="candidatePreview" class="oh-card mt-4" style="display: none;">
+                                <div class="oh-card__header">
+                                    <h5>{% trans "Selected Candidate Details" %}</h5>
+                                </div>
+                                <div class="oh-card__body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div id="candidateInfo"></div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div id="candidateSkills"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Invoice Generation Options -->
+                            <div class="oh-card mt-4">
+                                <div class="oh-card__header">
+                                    <h5>{% trans "Invoice Generation Options" %}</h5>
+                                </div>
+                                <div class="oh-card__body">
+                                    <div class="oh-form__group">
+                                        <div class="oh-form__check">
+                                            <input type="checkbox" 
+                                                   class="oh-form__check-input" 
+                                                   id="create_invoice_now" 
+                                                   name="create_invoice_now">
+                                            <label class="oh-form__check-label" for="create_invoice_now">
+                                                {% trans "Create recruitment invoice immediately (ignore notice period)" %}
+                                            </label>
+                                        </div>
+                                        <small class="oh-form__help">
+                                            {% trans "Check this if you want to generate the invoice right away instead of waiting for the notice period to complete." %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="oh-form__actions mt-4">
+                                <button type="submit" class="oh-btn oh-btn--primary">
+                                    <i class="oh-icon-save me-2"></i>{% trans "Create Placement" %}
+                                </button>
+                                <a href="{% url 'invoicing:placement_list' %}" class="oh-btn oh-btn--light">
+                                    {% trans "Cancel" %}
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Candidate Creation Modal -->
+<div class="modal fade" id="candidateModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{% trans "Create New Candidate" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="candidateForm">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="oh-form__group mb-3">
+                                <label class="oh-form__label">{% trans "Full Name" %} *</label>
+                                <input type="text" class="oh-form__input" name="name" required>
+                            </div>
+                            <div class="oh-form__group mb-3">
+                                <label class="oh-form__label">{% trans "Email" %}</label>
+                                <input type="email" class="oh-form__input" name="email">
+                            </div>
+                            <div class="oh-form__group mb-3">
+                                <label class="oh-form__label">{% trans "Phone" %}</label>
+                                <input type="tel" class="oh-form__input" name="phone">
+                            </div>
+                            <div class="oh-form__group mb-3">
+                                <label class="oh-form__label">{% trans "Current Company" %}</label>
+                                <input type="text" class="oh-form__input" name="current_company">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="oh-form__group mb-3">
+                                <label class="oh-form__label">{% trans "Current Position" %}</label>
+                                <input type="text" class="oh-form__input" name="current_position">
+                            </div>
+                            <div class="oh-form__group mb-3">
+                                <label class="oh-form__label">{% trans "Experience (Years)" %}</label>
+                                <input type="number" class="oh-form__input" name="experience_years" min="0" value="0">
+                            </div>
+                            <div class="oh-form__group mb-3">
+                                <label class="oh-form__label">{% trans "Expected Salary" %}</label>
+                                <input type="number" class="oh-form__input" name="expected_salary" step="0.01">
+                            </div>
+                            <div class="oh-form__group mb-3">
+                                <label class="oh-form__label">{% trans "Notice Period (Days)" %}</label>
+                                <input type="number" class="oh-form__input" name="notice_period_days" value="30" min="0">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="oh-form__group mb-3">
+                        <label class="oh-form__label">{% trans "Key Skills" %}</label>
+                        <textarea class="oh-form__input" name="skills" rows="3" placeholder="e.g. Python, Django, React, AWS"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+                <button type="button" class="btn btn-primary" onclick="createCandidate()">{% trans "Create Candidate" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Client Creation Modal -->
+<div class="modal fade" id="clientModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{% trans "Create New Client" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="clientForm">
+                    {% csrf_token %}
+                    <div class="oh-form__group mb-3">
+                        <label class="oh-form__label">{% trans "Company Name" %} *</label>
+                        <input type="text" class="oh-form__input" name="name" required>
+                    </div>
+                    <div class="oh-form__group mb-3">
+                        <label class="oh-form__label">{% trans "Contact Person" %} *</label>
+                        <input type="text" class="oh-form__input" name="contact_person" required>
+                    </div>
+                    <div class="oh-form__group mb-3">
+                        <label class="oh-form__label">{% trans "Email" %} *</label>
+                        <input type="email" class="oh-form__input" name="email" required>
+                    </div>
+                    <div class="oh-form__group mb-3">
+                        <label class="oh-form__label">{% trans "Phone" %}</label>
+                        <input type="tel" class="oh-form__input" name="phone">
+                    </div>
+                    <div class="oh-form__group mb-3">
+                        <label class="oh-form__label">{% trans "Address" %} *</label>
+                        <textarea class="oh-form__input" name="address" rows="3" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+                <button type="button" class="btn btn-primary" onclick="createClient()">{% trans "Create Client" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openCandidateModal() {
+    new bootstrap.Modal(document.getElementById('candidateModal')).show();
+}
+
+function openClientModal() {
+    new bootstrap.Modal(document.getElementById('clientModal')).show();
+}
+
+async function createCandidate() {
+    const form = document.getElementById('candidateForm');
+    const formData = new FormData(form);
+    
+    try {
+        const response = await fetch('{% url "invoicing:candidate_create" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Add new candidate to select dropdown
+            const candidateSelect = document.getElementById('candidate');
+            const option = new Option(
+                `${data.name} - ${data.position || 'No Position'} (${data.experience || '0 yrs'})`, 
+                data.id, 
+                true, 
+                true
+            );
+            candidateSelect.add(option);
+            
+            // Close modal and reset form
+            bootstrap.Modal.getInstance(document.getElementById('candidateModal')).hide();
+            form.reset();
+            
+            // Show success message
+            showToast(data.message || 'Candidate created successfully!', 'success');
+        } else {
+            showToast(data.error || 'Error creating candidate', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error creating candidate', 'error');
+    }
+}
+
+async function createClient() {
+    const form = document.getElementById('clientForm');
+    const formData = new FormData(form);
+    
+    try {
+        const response = await fetch('{% url "invoicing:client_create" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Add new client to select dropdown
+            const clientSelect = document.getElementById('client');
+            const option = new Option(
+                `${data.name} - ${data.contact_person || 'No Contact'}`, 
+                data.id, 
+                true, 
+                true
+            );
+            clientSelect.add(option);
+            
+            // Close modal and reset form
+            bootstrap.Modal.getInstance(document.getElementById('clientModal')).hide();
+            form.reset();
+            
+            // Show success message
+            showToast(data.message || 'Client created successfully!', 'success');
+        } else {
+            showToast(data.error || 'Error creating client', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error creating client', 'error');
+    }
+}
+
+function showToast(message, type) {
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} toast-message`;
+    toast.textContent = message;
+    toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        z-index: 9999;
+        border-radius: 4px;
+        animation: slideIn 0.3s ease;
+        max-width: 400px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// Show candidate preview when candidate is selected
+document.getElementById('candidate').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const candidatePreview = document.getElementById('candidatePreview');
+    
+    if (this.value) {
+        const experience = selectedOption.dataset.experience || 'Not specified';
+        const skills = selectedOption.dataset.skills || 'Not specified';
+        
+        document.getElementById('candidateInfo').innerHTML = `
+            <strong>Experience Level:</strong> ${experience}<br>
+            <strong>Selected:</strong> ${selectedOption.text}
+        `;
+        
+        document.getElementById('candidateSkills').innerHTML = `
+            <strong>Skills:</strong> ${skills}
+        `;
+        
+        candidatePreview.style.display = 'block';
+    } else {
+        candidatePreview.style.display = 'none';
+    }
+});
+
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

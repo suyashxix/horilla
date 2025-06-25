@@ -1,0 +1,90 @@
+{% extends 'index.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Create Invoice" %}{% endblock %}
+
+{% block content %}
+<main :class="sidebarOpen ? 'oh-main__sidebar-visible' : ''">
+    <div class="oh-wrapper">
+        <div class="oh-dashboard row">
+            <div class="oh-dashboard__left col-12">
+                <div class="oh-titlebar mb-4">
+                    <div class="d-flex align-items-center">
+                        <a href="{% url 'invoicing:placement_list' %}" class="oh-btn oh-btn--light me-3">
+                            <i class="oh-icon-arrow-left"></i>
+                        </a>
+                        <h3 class="oh-title mb-0">
+                            <i class="oh-icon-file-text me-2"></i>{% trans "Create Invoice" %}
+                        </h3>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="oh-card">
+                            <div class="oh-card__header">
+                                <h5>{% trans "Invoice Details" %}</h5>
+                            </div>
+                            <div class="oh-card__body">
+                                <form method="post" id="invoiceCreateForm">
+                                    {% csrf_token %}
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="oh-form__group mb-3">
+                                                <label class="oh-form__label">{% trans "Tax Rate (%)" %}</label>
+                                                <input type="number" class="oh-form__input" name="tax_rate" value="18" step="0.01" min="0" max="100">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="oh-form__group mb-3">
+                                                <label class="oh-form__label">{% trans "Due Days" %}</label>
+                                                <select class="oh-form__input" name="due_days">
+                                                    <option value="15">15 {% trans "days" %}</option>
+                                                    <option value="30" selected>30 {% trans "days" %}</option>
+                                                    <option value="45">45 {% trans "days" %}</option>
+                                                    <option value="60">60 {% trans "days" %}</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="oh-form__group mb-3">
+                                        <label class="oh-form__label">{% trans "Notes" %}</label>
+                                        <textarea class="oh-form__input" name="notes" rows="3" placeholder="{% trans 'Additional notes for the invoice...' %}"></textarea>
+                                    </div>
+                                    
+                                    <div class="oh-form__actions">
+                                        <button type="submit" class="oh-btn oh-btn--primary">
+                                            <i class="oh-icon-file-text me-2"></i>{% trans "Create Invoice" %}
+                                        </button>
+                                        <a href="{% url 'invoicing:placement_list' %}" class="oh-btn oh-btn--light">
+                                            {% trans "Cancel" %}
+                                        </a>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="oh-card">
+                            <div class="oh-card__header">
+                                <h5>{% trans "Placement Summary" %}</h5>
+                            </div>
+                            <div class="oh-card__body">
+                                <p><strong>{% trans "Candidate" %}:</strong> {{ candidate.name }}</p>
+                                <p><strong>{% trans "Client" %}:</strong> {{ client.name }}</p>
+                                <p><strong>{% trans "Position" %}:</strong> {{ placement.position }}</p>
+                                <p><strong>{% trans "Joining Date" %}:</strong> {{ placement.joining_date|date:"M d, Y" }}</p>
+                                <p><strong>{% trans "Placement Fee" %}:</strong> ₹{{ placement.placement_fee|floatformat:2 }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

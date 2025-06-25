@@ -1,0 +1,198 @@
+{% extends 'index.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{{ client.name }} - {% trans "Client Details" %}{% endblock %}
+
+{% block content %}
+<main :class="sidebarOpen ? 'oh-main__sidebar-visible' : ''">
+    <div class="oh-wrapper">
+        <div class="oh-dashboard row">
+            <div class="oh-dashboard__left col-12">
+                <!-- Header Section -->
+                <div class="oh-titlebar mb-4">
+                    <div class="d-flex justify-content-between align-items-center w-100">
+                        <div class="d-flex align-items-center">
+                            <a href="{% url 'invoicing:client_list' %}" class="oh-btn oh-btn--light me-3">
+                                <i class="oh-icon-arrow-left"></i>
+                            </a>
+                            <div>
+                                <h3 class="oh-title mb-0">
+                                    <i class="oh-icon-building me-2"></i>{{ client.name }}
+                                </h3>
+                                <small class="text-muted">{% trans "Client Details" %}</small>
+                            </div>
+                        </div>
+                        <div class="oh-titlebar__actions">
+                            <a href="{% url 'invoicing:client_edit' client.id %}" class="oh-btn oh-btn--secondary me-2">
+                                <i class="oh-icon-edit me-2"></i>{% trans "Edit Client" %}
+                            </a>
+                            <a href="{% url 'invoicing:general_invoice_create' %}" class="oh-btn oh-btn--primary">
+                                <i class="oh-icon-plus me-2"></i>{% trans "Create Invoice" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Client Info Card -->
+                <div class="row mb-4">
+                    <div class="col-md-8">
+                        <div class="oh-card">
+                            <div class="oh-card__header">
+                                <h5>{% trans "Client Information" %}</h5>
+                            </div>
+                            <div class="oh-card__body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="oh-form__label">{% trans "Company Name" %}</label>
+                                            <p class="oh-form__text">{{ client.name }}</p>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="oh-form__label">{% trans "Contact Person" %}</label>
+                                            <p class="oh-form__text">{{ client.contact_person|default:"Not specified" }}</p>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="oh-form__label">{% trans "Email" %}</label>
+                                            <p class="oh-form__text">
+                                                <a href="mailto:{{ client.email }}">{{ client.email }}</a>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="oh-form__label">{% trans "Phone" %}</label>
+                                            <p class="oh-form__text">
+                                                {% if client.phone %}
+                                                    <a href="tel:{{ client.phone }}">{{ client.phone }}</a>
+                                                {% else %}
+                                                    {% trans "Not specified" %}
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="oh-form__label">{% trans "Status" %}</label>
+                                            <p class="oh-form__text">
+                                                {% if client.is_active %}
+                                                    <span class="badge bg-success">{% trans "Active" %}</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{% trans "Inactive" %}</span>
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="oh-form__label">{% trans "Address" %}</label>
+                                            <p class="oh-form__text">{{ client.address|default:"Not specified" }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <!-- Statistics -->
+                        <div class="oh-card mb-3">
+                            <div class="oh-card__body text-center">
+                                <div class="oh-stats__number text-info">{{ total_invoices }}</div>
+                                <div class="oh-stats__label">{% trans "Total Invoices" %}</div>
+                            </div>
+                        </div>
+                        <div class="oh-card mb-3">
+                            <div class="oh-card__body text-center">
+                                <div class="oh-stats__number text-success">{{ paid_invoices }}</div>
+                                <div class="oh-stats__label">{% trans "Paid Invoices" %}</div>
+                            </div>
+                        </div>
+                        <div class="oh-card">
+                            <div class="oh-card__body text-center">
+                                <div class="oh-stats__number text-primary">₹{{ total_amount|floatformat:2 }}</div>
+                                <div class="oh-stats__label">{% trans "Total Amount" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Invoices Section -->
+                <div class="oh-card">
+                    <div class="oh-card__header">
+                        <h5>{% trans "Client Invoices" %}</h5>
+                    </div>
+                    <div class="oh-card__body">
+                        {% if recruitment_invoices or general_invoices %}
+                        <div class="table-responsive">
+                            <table class="oh-table">
+                                <thead>
+                                    <tr>
+                                        <th>{% trans "Invoice Number" %}</th>
+                                        <th>{% trans "Type" %}</th>
+                                        <th>{% trans "Service/Candidate" %}</th>
+                                        <th>{% trans "Amount" %}</th>
+                                        <th>{% trans "Status" %}</th>
+                                        <th>{% trans "Actions" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for invoice in recruitment_invoices %}
+                                    <tr>
+                                        <td>{{ invoice.invoice_number }}</td>
+                                        <td><span class="badge bg-info">{% trans "Recruitment" %}</span></td>
+                                        <td>
+                                            <strong>{{ invoice.placement.candidate.name }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ invoice.placement.position }}</small>
+                                        </td>
+                                        <td>₹{{ invoice.total_amount|floatformat:2 }}</td>
+                                        <td>
+                                            <span class="badge bg-{% if invoice.status == 'paid' %}success{% elif invoice.status == 'sent' %}warning{% else %}secondary{% endif %}">
+                                                {{ invoice.status }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'invoicing:invoice_detail' invoice.id %}" class="oh-btn oh-btn--light oh-btn--sm">
+                                                <i class="oh-icon-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                    {% for invoice in general_invoices %}
+                                    <tr>
+                                        <td>{{ invoice.invoice_number }}</td>
+                                        <td><span class="badge bg-success">{% trans "General" %}</span></td>
+                                        <td>
+                                            <strong>{% trans "General Service" %}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ invoice.service_description|truncatechars:50 }}</small>
+                                        </td>
+                                        <td>₹{{ invoice.total_amount|floatformat:2 }}</td>
+                                        <td>
+                                            <span class="badge bg-{% if invoice.status == 'paid' %}success{% elif invoice.status == 'sent' %}warning{% else %}secondary{% endif %}">
+                                                {{ invoice.status }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'invoicing:general_invoice_detail' invoice.id %}" class="oh-btn oh-btn--light oh-btn--sm">
+                                                <i class="oh-icon-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5">
+                            <i class="oh-icon-file-text text-muted" style="font-size: 3rem;"></i>
+                            <h4 class="text-muted mt-3">{% trans "No invoices found" %}</h4>
+                            <p class="text-muted">{% trans "This client doesn't have any invoices yet" %}</p>
+                            <a href="{% url 'invoicing:general_invoice_create' %}" class="oh-btn oh-btn--primary">
+                                <i class="oh-icon-plus me-2"></i>{% trans "Create First Invoice" %}
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% endblock %}

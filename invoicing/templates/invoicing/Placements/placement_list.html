@@ -1,0 +1,309 @@
+{% extends 'index.html' %}
+{% load i18n %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}{% trans "Placements" %}{% endblock %}
+
+{% block content %}
+<main :class="sidebarOpen ? 'oh-main__sidebar-visible' : ''">
+    <div class="oh-wrapper">
+        <div class="oh-dashboard row">
+            <div class="oh-dashboard__left col-12">
+                <!-- Header Section -->
+                <div class="oh-titlebar mb-4">
+                    <div class="d-flex justify-content-between align-items-center w-100">
+                        <h3 class="oh-title mb-0">
+                            <i class="oh-icon-users me-2"></i>{% trans "Placement Management" %}
+                        </h3>
+                        <div class="oh-titlebar__actions">
+                            <span class="badge bg-info me-2" id="placementCount">{{ placement_data|length }} {% trans "Placements" %}</span>
+                            <a href="{% url 'invoicing:candidate_list' %}" class="oh-btn oh-btn--secondary me-2">
+                                <i class="oh-icon-user me-2"></i>{% trans "Manage Candidates" %}
+                            </a>
+                            <a href="{% url 'invoicing:placement_create' %}" class="oh-btn oh-btn--primary">
+                                <i class="oh-icon-plus me-2"></i>{% trans "Add Placement" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters and Search Section -->
+                <div class="oh-card mb-4">
+                    <div class="oh-card__body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="oh-form__group">
+                                    <label class="oh-form__label">{% trans "Search" %}</label>
+                                    <div class="oh-form__input-group">
+                                        <span class="oh-form__input-group-text">
+                                            <i class="oh-icon-search"></i>
+                                        </span>
+                                        <input type="text" 
+                                               class="oh-form__input" 
+                                               id="placementSearch" 
+                                               placeholder="{% trans 'Search by candidate, client, or position...' %}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="oh-form__group">
+                                    <label class="oh-form__label">{% trans "Status" %}</label>
+                                    <select class="oh-form__input" id="statusFilter">
+                                        <option value="">{% trans "All Status" %}</option>
+                                        <option value="eligible">{% trans "Invoice Eligible" %}</option>
+                                        <option value="not-eligible">{% trans "Not Eligible" %}</option>
+                                        <option value="invoiced">{% trans "Invoice Created" %}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="oh-form__group">
+                                    <label class="oh-form__label">{% trans "Client" %}</label>
+                                    <select class="oh-form__input" id="clientFilter">
+                                        <option value="">{% trans "All Clients" %}</option>
+                                        {% for client in clients %}
+                                        <option value="{{ client.name|lower }}">{{ client.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="oh-form__group">
+                                    <label class="oh-form__label">{% trans "Sort By" %}</label>
+                                    <select class="oh-form__input" id="sortFilter">
+                                        <option value="joining_date">{% trans "Joining Date" %}</option>
+                                        <option value="candidate">{% trans "Candidate Name" %}</option>
+                                        <option value="client">{% trans "Client Name" %}</option>
+                                        <option value="position">{% trans "Position" %}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-1">
+                                <div class="oh-form__group">
+                                    <label class="oh-form__label">&nbsp;</label>
+                                    <button class="oh-btn oh-btn--light w-100" id="clearFilters">
+                                        <i class="oh-icon-refresh"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="oh-card-dashboard oh-card-dashboard--info">
+                            <div class="oh-card-dashboard__body text-center">
+                                <div class="oh-stats__number" id="totalCount">{{ placement_data|length }}</div>
+                                <div class="oh-stats__label">{% trans "Total Placements" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="oh-card-dashboard oh-card-dashboard--success">
+                            <div class="oh-card-dashboard__body text-center">
+                                <div class="oh-stats__number" id="eligibleCount">0</div>
+                                <div class="oh-stats__label">{% trans "Invoice Eligible" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="oh-card-dashboard oh-card-dashboard--warning">
+                            <div class="oh-card-dashboard__body text-center">
+                                <div class="oh-stats__number" id="pendingCount">0</div>
+                                <div class="oh-stats__label">{% trans "Pending" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="oh-card-dashboard oh-card-dashboard--primary">
+                            <div class="oh-card-dashboard__body text-center">
+                                <div class="oh-stats__number" id="invoicedCount">0</div>
+                                <div class="oh-stats__label">{% trans "Invoiced" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Placements List -->
+                <div class="oh-card">
+                    <div class="oh-card__header">
+                        <h5>{% trans "Placement Directory" %}</h5>
+                    </div>
+                    <div class="oh-card__body">
+                        {% if placement_data %}
+                        <div id="placementsList">
+                            {% for data in placement_data %}
+                            <div class="placement-card" 
+                                 data-candidate="{{ data.placement.candidate.name|lower }}"
+                                 data-client="{{ data.placement.client.name|lower }}"
+                                 data-position="{{ data.placement.position|lower }}"
+                                 data-status="{% if data.has_invoice %}invoiced{% elif data.is_eligible %}eligible{% else %}not-eligible{% endif %}"
+                                 data-joining-date="{{ data.placement.joining_date|date:'Y-m-d' }}">
+                                
+                                <div class="placement-card__header">
+                                    <div class="placement-card__avatar">
+                                        <div class="oh-avatar oh-avatar--lg">
+                                            <i class="oh-icon-user"></i>
+                                        </div>
+                                    </div>
+                                    <div class="placement-card__info">
+                                        <h5 class="placement-card__name">{{ data.placement.candidate.name }}</h5>
+                                        <p class="placement-card__position">{{ data.placement.position }}</p>
+                                        <div class="placement-card__meta">
+                                            <span class="meta-item">
+                                                <i class="oh-icon-building me-1"></i>{{ data.placement.client.name }}
+                                            </span>
+                                            <span class="meta-item">
+                                                <i class="oh-icon-calendar me-1"></i>{{ data.placement.joining_date }}
+                                            </span>
+                                            <span class="meta-item">
+                                                <i class="oh-icon-star me-1"></i>{{ data.placement.candidate.experience_level }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="placement-card__status">
+                                        {% if data.has_invoice %}
+                                            <span class="status-badge status-badge--success">
+                                                <i class="oh-icon-check me-1"></i>{% trans "Invoice Created" %}
+                                            </span>
+                                        {% elif data.is_eligible %}
+                                            <span class="status-badge status-badge--ready">
+                                                <i class="oh-icon-check-circle me-1"></i>{% trans "Ready for Invoice" %}
+                                            </span>
+                                        {% else %}
+                                            <span class="status-badge status-badge--pending">
+                                                <i class="oh-icon-clock me-1"></i>
+                                                {% if data.days_until_eligible %}
+                                                    {{ data.days_until_eligible }} {% trans "days left" %}
+                                                {% else %}
+                                                    {% trans "Not eligible" %}
+                                                {% endif %}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="placement-card__body">
+                                    <div class="placement-details">
+                                        <div class="detail-item">
+                                            <span class="detail-label">{% trans "Notice Period" %}:</span>
+                                            <span class="detail-value">{{ data.placement.notice_period_days }} {% trans "days" %}</span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <span class="detail-label">{% trans "Placement Fee" %}:</span>
+                                            <span class="detail-value">₹{{ data.placement.placement_fee|floatformat:2 }}</span>
+                                        </div>
+                                        {% if data.placement.offered_salary %}
+                                        <div class="detail-item">
+                                            <span class="detail-label">{% trans "Offered Salary" %}:</span>
+                                            <span class="detail-value">₹{{ data.placement.offered_salary|floatformat:2 }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if data.placement.candidate.email %}
+                                        <div class="detail-item">
+                                            <span class="detail-label">{% trans "Email" %}:</span>
+                                            <span class="detail-value">{{ data.placement.candidate.email }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if data.placement.candidate.phone %}
+                                        <div class="detail-item">
+                                            <span class="detail-label">{% trans "Phone" %}:</span>
+                                            <span class="detail-value">{{ data.placement.candidate.phone }}</span>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="placement-card__actions">
+                                    {% if data.is_eligible and not data.has_invoice %}
+                                        <a href="{% url 'invoicing:invoice_create' data.placement.id %}" 
+                                           class="oh-btn oh-btn--primary oh-btn--sm">
+                                            <i class="oh-icon-file-text me-1"></i>{% trans "Create Invoice" %}
+                                        </a>
+                                    {% elif data.has_invoice %}
+                                        <a href="{% url 'invoicing:invoice_detail' data.placement.invoice.id %}" 
+                                           class="oh-btn oh-btn--success oh-btn--sm">
+                                            <i class="oh-icon-eye me-1"></i>{% trans "View Invoice" %}
+                                        </a>
+                                    {% endif %}
+                                    
+                                    <div class="oh-dropdown">
+                                        <button class="oh-btn oh-btn--light oh-btn--sm oh-dropdown__toggle">
+                                            <i class="oh-icon-more"></i>
+                                        </button>
+                                        <div class="oh-dropdown__content">
+                                            <a href="#" class="oh-dropdown__item">
+                                                <i class="oh-icon-edit me-2"></i>{% trans "Edit Placement" %}
+                                            </a>
+                                            <a href="{% url 'invoicing:candidate_detail' data.placement.candidate.id %}" class="oh-dropdown__item">
+                                                <i class="oh-icon-user me-2"></i>{% trans "View Candidate" %}
+                                            </a>
+                                            <a href="{% url 'invoicing:client_detail' data.placement.client.id %}" class="oh-dropdown__item">
+                                                <i class="oh-icon-building me-2"></i>{% trans "View Client" %}
+                                            </a>
+                                            {% if data.placement.candidate.email %}
+                                            <a href="mailto:{{ data.placement.candidate.email }}" class="oh-dropdown__item">
+                                                <i class="oh-icon-mail me-2"></i>{% trans "Contact Candidate" %}
+                                            </a>
+                                            {% endif %}
+                                            <div class="oh-dropdown__divider"></div>
+                                            <button class="oh-dropdown__item text-danger" data-placement-id="{{ data.placement.id }}" data-action="delete">
+                                                <i class="oh-icon-delete me-2"></i>{% trans "Delete Placement" %}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5" id="emptyState">
+                            <i class="oh-icon-users text-muted" style="font-size: 3rem;"></i>
+                            <h4 class="text-muted mt-3">{% trans "No placements found" %}</h4>
+                            <p class="text-muted">{% trans "Create your first placement to get started with recruitment invoicing" %}</p>
+                            <div class="mt-3">
+                                <a href="{% url 'invoicing:candidate_create' %}" class="oh-btn oh-btn--secondary me-2">
+                                    <i class="oh-icon-user me-2"></i>{% trans "Add Candidate First" %}
+                                </a>
+                                <a href="{% url 'invoicing:placement_create' %}" class="oh-btn oh-btn--primary">
+                                    <i class="oh-icon-plus me-2"></i>{% trans "Create First Placement" %}
+                                </a>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <!-- No Results Message (Hidden by default) -->
+                        <div id="noResultsMessage" class="text-center py-5" style="display: none;">
+                            <i class="oh-icon-search text-muted" style="font-size: 3rem;"></i>
+                            <h4 class="text-muted mt-3">{% trans "No placements match your search" %}</h4>
+                            <p class="text-muted">{% trans "Try adjusting your filters or search terms" %}</p>
+                            <button class="oh-btn oh-btn--secondary" id="clearSearchBtn">
+                                <i class="oh-icon-refresh me-2"></i>{% trans "Clear Search" %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Pass data to JavaScript -->
+<script>
+window.PLACEMENT_CONFIG = {
+    csrfToken: '{{ csrf_token }}',
+    translations: {
+        placements: '{% trans "Placements" %}',
+        noResults: '{% trans "No placements found" %}',
+        confirmDelete: '{% trans "Are you sure you want to delete this placement?" %}'
+    }
+};
+</script>
+
+<!-- Load CSS and JS -->
+<link rel="stylesheet" href="{% static 'invoicing/css/placement-list.css' %}">
+<script src="{% static 'invoicing/js/placement-list.js' %}"></script>
+{% endblock %}

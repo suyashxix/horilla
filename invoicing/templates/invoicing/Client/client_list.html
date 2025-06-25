@@ -1,0 +1,258 @@
+{% extends 'index.html' %}
+{% load i18n %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}{% trans "Clients" %}{% endblock %}
+
+
+{% block content %}
+
+{% block css %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'invoicing/css/client-list.css' %}">
+{% endblock %}
+
+<main :class="sidebarOpen ? 'oh-main__sidebar-visible' : ''">
+    <div class="oh-wrapper">
+        <div class="oh-dashboard row">
+            <div class="oh-dashboard__left col-12">
+                <!-- Header Section -->
+                <div class="oh-titlebar mb-4">
+                    <div class="d-flex justify-content-between align-items-center w-100">
+                        <h3 class="oh-title mb-0">
+                            <i class="oh-icon-building me-2"></i>{% trans "Client Management" %}
+                        </h3>
+                        <div class="oh-titlebar__actions">
+                            <span class="badge bg-info me-2" id="clientCount">{{ clients|length }} {% trans "Clients" %}</span>
+                            <a href="{% url 'invoicing:client_create' %}" class="oh-btn oh-btn--primary">
+                                <i class="oh-icon-plus me-2"></i>{% trans "Add Client" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search and Filters -->
+                <div class="oh-card mb-4">
+                    <div class="oh-card__body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="oh-form__group">
+                                    <label class="oh-form__label">{% trans "Search" %}</label>
+                                    <div class="oh-form__input-group">
+                                        <span class="oh-form__input-group-text">
+                                            <i class="oh-icon-search"></i>
+                                        </span>
+                                        <input type="text" 
+                                               class="oh-form__input" 
+                                               id="clientSearch" 
+                                               placeholder="{% trans 'Search by name, email, or contact person...' %}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="oh-form__group">
+                                    <label class="oh-form__label">{% trans "Status" %}</label>
+                                    <select class="oh-form__input" id="statusFilter">
+                                        <option value="">{% trans "All Clients" %}</option>
+                                        <option value="active">{% trans "Active" %}</option>
+                                        <option value="inactive">{% trans "Inactive" %}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="oh-form__group">
+                                    <label class="oh-form__label">{% trans "Sort By" %}</label>
+                                    <select class="oh-form__input" id="sortFilter">
+                                        <option value="name">{% trans "Name" %}</option>
+                                        <option value="created">{% trans "Date Added" %}</option>
+                                        <option value="email">{% trans "Email" %}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="oh-form__group">
+                                    <label class="oh-form__label">&nbsp;</label>
+                                    <button class="oh-btn oh-btn--light w-100" id="clearFilters">
+                                        <i class="oh-icon-refresh me-1"></i>{% trans "Clear" %}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Client Statistics -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="oh-card-dashboard oh-card-dashboard--info">
+                            <div class="oh-card-dashboard__body text-center">
+                                <div class="oh-stats__number">{{ clients|length }}</div>
+                                <div class="oh-stats__label">{% trans "Total Clients" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="oh-card-dashboard oh-card-dashboard--success">
+                            <div class="oh-card-dashboard__body text-center">
+                                <div class="oh-stats__number">{{ active_clients_count|default:0 }}</div>
+                                <div class="oh-stats__label">{% trans "Active Clients" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="oh-card-dashboard oh-card-dashboard--warning">
+                            <div class="oh-card-dashboard__body text-center">
+                                <div class="oh-stats__number">{{ recent_clients_count|default:0 }}</div>
+                                <div class="oh-stats__label">{% trans "New This Month" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="oh-card-dashboard oh-card-dashboard--primary">
+                            <div class="oh-card-dashboard__body text-center">
+                                <div class="oh-stats__number">{{ clients_with_invoices|default:0 }}</div>
+                                <div class="oh-stats__label">{% trans "With Invoices" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Client List -->
+                <div class="oh-card">
+                    <div class="oh-card__header">
+                        <h5>{% trans "Client Directory" %}</h5>
+                    </div>
+                    <div class="oh-card__body">
+                        {% if clients %}
+                        <div class="table-responsive">
+                            <table class="oh-table" id="clientsTable">
+                                <thead>
+                                    <tr>
+                                        <th class="sortable" data-sort="name">
+                                            {% trans "Client" %} <i class="oh-icon-sort"></i>
+                                        </th>
+                                        <th class="sortable" data-sort="contact">
+                                            {% trans "Contact Person" %} <i class="oh-icon-sort"></i>
+                                        </th>
+                                        <th class="sortable" data-sort="email">
+                                            {% trans "Contact Info" %} <i class="oh-icon-sort"></i>
+                                        </th>
+                                        <th>{% trans "Address" %}</th>
+                                        <th>{% trans "Status" %}</th>
+                                        <th>{% trans "Actions" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="clientsTableBody">
+                                    {% for client in clients %}
+                                    <tr class="client-row" 
+                                        data-name="{{ client.name|lower }}"
+                                        data-email="{{ client.email|lower }}"
+                                        data-contact="{{ client.contact_person|lower }}"
+                                        data-status="{% if client.is_active %}active{% else %}inactive{% endif %}">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="oh-avatar oh-avatar--sm me-3">
+                                                    <i class="oh-icon-building"></i>
+                                                </div>
+                                                <div>
+                                                    <strong>{{ client.name }}</strong>
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        {% if client.company %}{{ client.company.company }}{% endif %}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <strong>{{ client.contact_person }}</strong>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <i class="oh-icon-mail me-1"></i>{{ client.email }}
+                                                {% if client.phone %}
+                                                <br>
+                                                <i class="oh-icon-phone me-1"></i>{{ client.phone }}
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="text-muted">
+                                                {{ client.address|truncatechars:50 }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if client.is_active %}
+                                                <span class="badge bg-success">{% trans "Active" %}</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{% trans "Inactive" %}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="oh-dropdown">
+                                                <button class="oh-btn oh-btn--light oh-btn--sm oh-dropdown__toggle">
+                                                    <i class="oh-icon-more"></i>
+                                                </button>
+                                                <div class="oh-dropdown__content">
+                                                    <button class="oh-dropdown__item" data-client-id="{{ client.id }}" data-action="view">
+                                                        <i class="oh-icon-eye me-2"></i>{% trans "View Details" %}
+                                                    </button>
+                                                    <button class="oh-dropdown__item" data-client-id="{{ client.id }}" data-action="edit">
+                                                        <i class="oh-icon-edit me-2"></i>{% trans "Edit Client" %}
+                                                    </button>
+                                                    <a href="{% url 'invoicing:general_invoice_create' %}" class="oh-dropdown__item">
+                                                        <i class="oh-icon-file-text me-2"></i>{% trans "Create Invoice" %}
+                                                    </a>
+                                                    <div class="oh-dropdown__divider"></div>
+                                                    <button class="oh-dropdown__item text-danger" data-client-id="{{ client.id }}" data-action="delete">
+                                                        <i class="oh-icon-delete me-2"></i>{% trans "Delete" %}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5" id="emptyState">
+                            <i class="oh-icon-building text-muted" style="font-size: 3rem;"></i>
+                            <h4 class="text-muted mt-3">{% trans "No clients found" %}</h4>
+                            <p class="text-muted">{% trans "Add your first client to get started with invoicing" %}</p>
+                            <a href="{% url 'invoicing:client_create' %}" class="oh-btn oh-btn--primary mt-3">
+                                <i class="oh-icon-plus me-2"></i>{% trans "Add First Client" %}
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+{% block js %}
+{{ block.super }}
+<!-- Pass data to JavaScript -->
+<script>
+window.INVOICING_CONFIG = {
+    csrfToken: '{{ csrf_token }}',
+    deleteClientUrl: '{% url "invoicing:client_list" %}',
+    createInvoiceUrl: '{% url "invoicing:general_invoice_create" %}',
+    translations: {
+        confirmDelete: '{% trans "Are you sure you want to delete this client?" %}',
+        deleteError: '{% trans "Error deleting client" %}',
+        clients: '{% trans "Clients" %}'
+    }
+};
+</script>
+<script src="{% static 'invoicing/js/client-list.js' %}"></script>
+{% endblock %}
+
+
+{% endblock %}
+
+

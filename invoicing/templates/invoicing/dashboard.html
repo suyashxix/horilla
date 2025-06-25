@@ -1,7 +1,8 @@
 {% extends 'index.html' %}
 {% load i18n %}
 {% load static %}
-{% load widget_tweaks %}
+
+{% block title %}{% trans "Invoicing Dashboard" %}{% endblock %}
 
 {% block content %}
 <main :class="sidebarOpen ? 'oh-main__sidebar-visible' : ''">
@@ -10,224 +11,328 @@
             <div class="oh-dashboard__left col-12">
                 <!-- Dashboard Header -->
                 <div class="oh-titlebar mb-4">
-                    <h3 class="oh-title">
-                        <i class="oh-icon-dashboard me-2"></i>{% trans "Invoicing Dashboard" %}
-                    </h3>
+                    <div class="d-flex justify-content-between align-items-center w-100">
+                        <h3 class="oh-title mb-0">
+                            <i class="oh-icon-dashboard me-2"></i>{% trans "Invoicing Dashboard" %}
+                        </h3>
+                        <div class="oh-titlebar__actions">
+                            <a href="{% url 'invoicing:placement_create' %}" class="oh-btn oh-btn--primary">
+                                <i class="oh-icon-plus me-2"></i>{% trans "New Placement" %}
+                            </a>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Dashboard Cards -->
-                <div class="oh-dashboard__cards row">
-                    <div class="col-12 col-sm-12 col-md-6 col-lg-3">
+                <!-- Dashboard Stats Cards -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
                         <div class="oh-card-dashboard oh-card-dashboard--success">
-                            <a href="{% url 'invoicing:placement_list' %}" class="text-decoration-none">
-                                <div class="oh-card-dashboard__header">
-                                    <span class="oh-card-dashboard__title">{% trans "Eligible for Invoicing" %}</span>
-                                    <i class="oh-icon-users oh-card-dashboard__icon"></i>
+                            <div class="oh-card-dashboard__body text-center">
+                                <div class="oh-stats__number">{{ stats.eligible_placements|default:0 }}</div>
+                                <div class="oh-stats__label">{% trans "Ready for Invoice" %}</div>
+                                <div class="oh-stats__icon">
+                                    <i class="oh-icon-check-circle"></i>
                                 </div>
-                                <div class="oh-card-dashboard__body">
-                                    <span class="oh-card-dashboard__count">{{ eligible_count|default:0 }}</span>
-                                    <span class="oh-card-dashboard__subtitle">{% trans "Ready to invoice" %}</span>
-                                </div>
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <div class="col-12 col-sm-12 col-md-6 col-lg-3">
-                        <div class="oh-card-dashboard oh-card-dashboard--warning">
-                            <a href="{% url 'invoicing:placement_list' %}" class="text-decoration-none">
-                                <div class="oh-card-dashboard__header">
-                                    <span class="oh-card-dashboard__title">{% trans "Total Placements" %}</span>
-                                    <i class="oh-icon-briefcase oh-card-dashboard__icon"></i>
-                                </div>
-                                <div class="oh-card-dashboard__body">
-                                    <span class="oh-card-dashboard__count">{{ total_placements|default:0 }}</span>
-                                    <span class="oh-card-dashboard__subtitle">{% trans "Active placements" %}</span>
-                                </div>
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <div class="col-12 col-sm-12 col-md-6 col-lg-3">
-                        <div class="oh-card-dashboard oh-card-dashboard--info">
-                            <a href="{% url 'invoicing:invoice_list' %}" class="text-decoration-none">
-                                <div class="oh-card-dashboard__header">
-                                    <span class="oh-card-dashboard__title">{% trans "Recent Invoices" %}</span>
-                                    <i class="oh-icon-file-text oh-card-dashboard__icon"></i>
-                                </div>
-                                <div class="oh-card-dashboard__body">
-                                    <span class="oh-card-dashboard__count">{{ recent_invoices|length|default:0 }}</span>
-                                    <span class="oh-card-dashboard__subtitle">{% trans "This month" %}</span>
-                                </div>
-                            </a>
-                        </div>
-                    </div>
-                    
-                    <div class="col-12 col-sm-12 col-md-6 col-lg-3">
-                        <div class="oh-card-dashboard oh-card-dashboard--danger">
-                            <div class="oh-card-dashboard__header">
-                                <span class="oh-card-dashboard__title">{% trans "Pending Notifications" %}</span>
-                                <i class="oh-icon-bell oh-card-dashboard__icon"></i>
                             </div>
-                            <div class="oh-card-dashboard__body">
-                                <span class="oh-card-dashboard__count">{{ notifications|length|default:0 }}</span>
-                                <span class="oh-card-dashboard__subtitle">{% trans "Need attention" %}</span>
+                            <div class="oh-card-dashboard__footer">
+                                <a href="{% url 'invoicing:placement_list' %}" class="oh-card-dashboard__link">
+                                    {% trans "View Eligible" %} <i class="oh-icon-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="oh-card-dashboard oh-card-dashboard--info">
+                            <div class="oh-card-dashboard__body text-center">
+                                <div class="oh-stats__number">{{ stats.total_placements|default:0 }}</div>
+                                <div class="oh-stats__label">{% trans "Total Placements" %}</div>
+                                <div class="oh-stats__icon">
+                                    <i class="oh-icon-users"></i>
+                                </div>
+                            </div>
+                            <div class="oh-card-dashboard__footer">
+                                <a href="{% url 'invoicing:placement_list' %}" class="oh-card-dashboard__link">
+                                    {% trans "View All" %} <i class="oh-icon-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="oh-card-dashboard oh-card-dashboard--warning">
+                            <div class="oh-card-dashboard__body text-center">
+                                <div class="oh-stats__number">{{ stats.total_invoices|default:0 }}</div>
+                                <div class="oh-stats__label">{% trans "Total Invoices" %}</div>
+                                <div class="oh-stats__icon">
+                                    <i class="oh-icon-file-text"></i>
+                                </div>
+                            </div>
+                            <div class="oh-card-dashboard__footer">
+                                <a href="{% url 'invoicing:invoice_list' %}" class="oh-card-dashboard__link">
+                                    {% trans "View All Invoices" %} <i class="oh-icon-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="oh-card-dashboard oh-card-dashboard--primary">
+                            <div class="oh-card-dashboard__body text-center">
+                                <div class="oh-stats__number">{{ stats.total_clients|default:0 }}</div>
+                                <div class="oh-stats__label">{% trans "Active Clients" %}</div>
+                                <div class="oh-stats__icon">
+                                    <i class="oh-icon-building"></i>
+                                </div>
+                            </div>
+                            <div class="oh-card-dashboard__footer">
+                                <a href="{% url 'invoicing:client_list' %}" class="oh-card-dashboard__link">
+                                    {% trans "Manage Clients" %} <i class="oh-icon-arrow-right"></i>
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Quick Actions -->
-                <div class="row mt-4">
-                    <div class="col-12">
-                        <div class="oh-card-dashboard oh-card-dashboard--no-scale oh-card-dashboard--transparent">
-                            <div class="oh-card-dashboard__header oh-card-dashboard__header--divider">
-                                <span class="oh-card-dashboard__title">{% trans "Quick Actions" %}</span>
+                <div class="oh-card mb-4">
+                    <div class="oh-card__header">
+                        <h5>{% trans "Quick Actions" %}</h5>
+                    </div>
+                    <div class="oh-card__body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <a href="{% url 'invoicing:candidate_create' %}" class="oh-btn oh-btn--primary w-100">
+                                    <i class="oh-icon-user me-2"></i>{% trans "Add Candidate" %}
+                                </a>
                             </div>
-                            <div class="oh-card-dashboard__body">
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <a href="{% url 'invoicing:placement_list' %}" class="oh-btn oh-btn--primary w-100 mb-2">
-                                            <i class="oh-icon-users me-2"></i>{% trans "Create Recruitment Invoice" %}
-                                        </a>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <a href="{% url 'invoicing:general_invoice_create' %}" class="oh-btn oh-btn--success w-100 mb-2">
-                                            <i class="oh-icon-file-text me-2"></i>{% trans "Create General Invoice" %}
-                                        </a>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <a href="{% url 'invoicing:client_list' %}" class="oh-btn oh-btn--secondary w-100 mb-2">
-                                            <i class="oh-icon-building me-2"></i>{% trans "Manage Clients" %}
-                                        </a>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <a href="{% url 'invoicing:invoice_list' %}" class="oh-btn oh-btn--info w-100 mb-2">
-                                            <i class="oh-icon-list me-2"></i>{% trans "View All Invoices" %}
-                                        </a>
-                                    </div>
-                                </div>
+                            <div class="col-md-3">
+                                <a href="{% url 'invoicing:client_create' %}" class="oh-btn oh-btn--secondary w-100">
+                                    <i class="oh-icon-building me-2"></i>{% trans "Add Client" %}
+                                </a>
+                            </div>
+                            <div class="col-md-3">
+                                <a href="{% url 'invoicing:placement_create' %}" class="oh-btn oh-btn--success w-100">
+                                    <i class="oh-icon-users me-2"></i>{% trans "Create Placement" %}
+                                </a>
+                            </div>
+                            <div class="col-md-3">
+                                <a href="{% url 'invoicing:general_invoice_create' %}" class="oh-btn oh-btn--info w-100">
+                                    <i class="oh-icon-file-text me-2"></i>{% trans "General Invoice" %}
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Recent Activity Section -->
-                <div class="row mt-4">
+                <!-- Main Content Row -->
+                <div class="row">
+                    <!-- Eligible Placements -->
                     <div class="col-md-6">
-                        <div class="oh-card-dashboard oh-card-dashboard--no-scale oh-card-dashboard--transparent">
-                            <div class="oh-card-dashboard__header oh-card-dashboard__header--divider">
-                                <span class="oh-card-dashboard__title">{% trans "Pending Notifications" %}</span>
-                                <span class="badge bg-danger">{{ notifications|length }}</span>
+                        <div class="oh-card">
+                            <div class="oh-card__header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5>{% trans "Ready for Invoice" %}</h5>
+                                    <span class="badge bg-success">{{ eligible_placements|length }}</span>
+                                </div>
                             </div>
-                            <div class="oh-card-dashboard__body">
-                                {% for notification in notifications|slice:":5" %}
-                                <div class="oh-alert oh-alert--info mb-2">
-                                    <div class="d-flex justify-content-between align-items-start">
-                                        <div>
-                                            <strong>{{ notification.placement.candidate }}</strong><br>
-                                            <small class="text-muted">{{ notification.message }}</small>
+                            <div class="oh-card__body">
+                                {% if eligible_placements %}
+                                    {% for placement in eligible_placements|slice:":5" %}
+                                    <div class="d-flex justify-content-between align-items-center border-bottom py-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="oh-avatar oh-avatar--sm me-3">
+                                                <i class="oh-icon-user"></i>
+                                            </div>
+                                            <div>
+                                                <strong>{{ placement.candidate.name }}</strong>
+                                                <br>
+                                                <small class="text-muted">{{ placement.client.name }} • {{ placement.position }}</small>
+                                                <br>
+                                                <small class="text-success">₹{{ placement.placement_fee|floatformat:2 }}</small>
+                                            </div>
                                         </div>
-                                        <a href="{% url 'invoicing:invoice_create' notification.placement.id %}"
-                                           class="oh-btn oh-btn--secondary oh-btn--sm">
-                                            {% trans "Create Invoice" %}
+                                        <div class="text-end">
+                                            <a href="{% url 'invoicing:invoice_create' placement.id %}" 
+                                               class="oh-btn oh-btn--primary oh-btn--sm">
+                                                <i class="oh-icon-file-text me-1"></i>{% trans "Create Invoice" %}
+                                            </a>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                    
+                                    {% if eligible_placements|length > 5 %}
+                                    <div class="text-center mt-3">
+                                        <a href="{% url 'invoicing:placement_list' %}" class="oh-btn oh-btn--light">
+                                            {% trans "View All" %} ({{ eligible_placements|length }})
                                         </a>
                                     </div>
-                                </div>
-                                {% empty %}
+                                    {% endif %}
+                                {% else %}
                                 <div class="text-center py-4">
                                     <i class="oh-icon-check-circle text-success" style="font-size: 3rem;"></i>
-                                    <p class="oh-text--muted mt-2">{% trans "No pending notifications" %}</p>
-                                    <small class="text-muted">{% trans "All invoices are up to date" %}</small>
-                                </div>
-                                {% endfor %}
-                                
-                                {% if notifications|length > 5 %}
-                                <div class="text-center mt-3">
-                                    <a href="#" class="oh-btn oh-btn--light oh-btn--sm">
-                                        {% trans "View All" %} ({{ notifications|length }})
+                                    <h6 class="mt-3 text-muted">{% trans "No placements ready for invoicing" %}</h6>
+                                    <p class="text-muted">{% trans "All placements are either already invoiced or still in notice period" %}</p>
+                                    <a href="{% url 'invoicing:placement_create' %}" class="oh-btn oh-btn--primary oh-btn--sm">
+                                        {% trans "Create New Placement" %}
                                     </a>
                                 </div>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
-                    
+
+                    <!-- Recent Invoices (Both Types) -->
                     <div class="col-md-6">
-                        <div class="oh-card-dashboard oh-card-dashboard--no-scale oh-card-dashboard--transparent">
-                            <div class="oh-card-dashboard__header oh-card-dashboard__header--divider">
-                                <span class="oh-card-dashboard__title">{% trans "Recent Invoices" %}</span>
-                                <a href="{% url 'invoicing:invoice_list' %}" class="oh-btn oh-btn--light oh-btn--sm">
-                                    {% trans "View All" %}
-                                </a>
+                        <div class="oh-card">
+                            <div class="oh-card__header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5>{% trans "Recent Invoices" %}</h5>
+                                    <a href="{% url 'invoicing:invoice_list' %}" class="oh-btn oh-btn--light oh-btn--sm">
+                                        {% trans "View All" %}
+                                    </a>
+                                </div>
                             </div>
-                            <div class="oh-card-dashboard__body">
-                                {% for invoice in recent_invoices|slice:":5" %}
-                                <div class="d-flex justify-content-between align-items-center border-bottom py-3">
-                                    <div class="d-flex align-items-center">
-                                        <div class="oh-avatar oh-avatar--sm me-3">
-                                            <i class="oh-icon-file-text"></i>
+                            <div class="oh-card__body">
+                                {% if recent_invoices %}
+                                    {% for invoice in recent_invoices|slice:":5" %}
+                                    <div class="d-flex justify-content-between align-items-center border-bottom py-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="oh-avatar oh-avatar--sm me-3">
+                                                {% if invoice.type == 'recruitment' %}
+                                                    <i class="oh-icon-users"></i>
+                                                {% else %}
+                                                    <i class="oh-icon-file-text"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <strong>{{ invoice.invoice_number }}</strong>
+                                                <br>
+                                                <small class="text-muted">
+                                                    {% if invoice.type == 'recruitment' %}
+                                                        {{ invoice.placement.client.name }}
+                                                    {% else %}
+                                                        {{ invoice.client_name }}
+                                                    {% endif %}
+                                                </small>
+                                                <br>
+                                                <small class="text-success">₹{{ invoice.total_amount|floatformat:2 }}</small>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <strong>{{ invoice.invoice_number }}</strong><br>
-                                            <small class="text-muted">{{ invoice.placement.client.name }}</small><br>
-                                            <small class="text-success">₹{{ invoice.total_amount|floatformat:2 }}</small>
+                                        <div class="text-end">
+                                            <span class="badge bg-{% if invoice.status == 'paid' %}success{% elif invoice.status == 'sent' %}warning{% elif invoice.status == 'overdue' %}danger{% else %}secondary{% endif %} mb-2">
+                                                {% if invoice.type == 'recruitment' %}
+                                                    <i class="oh-icon-users me-1"></i>
+                                                {% else %}
+                                                    <i class="oh-icon-file-text me-1"></i>
+                                                {% endif %}
+                                                {{ invoice.get_status_display|default:invoice.status }}
+                                            </span>
+                                            <br>
+                                            {% if invoice.type == 'recruitment' %}
+                                                <a href="{% url 'invoicing:invoice_detail' invoice.id %}" 
+                                                   class="oh-btn oh-btn--light oh-btn--sm">
+                                                    <i class="oh-icon-eye me-1"></i>{% trans "View" %}
+                                                </a>
+                                            {% else %}
+                                                <a href="{% url 'invoicing:general_invoice_detail' invoice.id %}" 
+                                                   class="oh-btn oh-btn--light oh-btn--sm">
+                                                    <i class="oh-icon-eye me-1"></i>{% trans "View" %}
+                                                </a>
+                                            {% endif %}
                                         </div>
                                     </div>
-                                    <div class="text-end">
-                                        <span class="badge bg-{% if invoice.status == 'paid' %}success{% elif invoice.status == 'sent' %}warning{% elif invoice.status == 'overdue' %}danger{% else %}secondary{% endif %} mb-2">
-                                            {{ invoice.get_status_display }}
-                                        </span><br>
-                                        <a href="{% url 'invoicing:invoice_detail' invoice.id %}"
-                                           class="oh-btn oh-btn--light oh-btn--sm">
-                                            <i class="oh-icon-eye me-1"></i>{% trans "View" %}
+                                    {% endfor %}
+                                {% else %}
+                                <div class="text-center py-4">
+                                    <i class="oh-icon-file-text text-muted" style="font-size: 3rem;"></i>
+                                    <h6 class="mt-3 text-muted">{% trans "No invoices yet" %}</h6>
+                                    <p class="text-muted">{% trans "Create your first placement or general invoice to get started" %}</p>
+                                    <div class="d-flex gap-2 justify-content-center">
+                                        <a href="{% url 'invoicing:placement_create' %}" class="oh-btn oh-btn--primary oh-btn--sm">
+                                            {% trans "Create Placement" %}
+                                        </a>
+                                        <a href="{% url 'invoicing:general_invoice_create' %}" class="oh-btn oh-btn--secondary oh-btn--sm">
+                                            {% trans "General Invoice" %}
                                         </a>
                                     </div>
                                 </div>
-                                {% empty %}
-                                <div class="text-center py-4">
-                                    <i class="oh-icon-file-text text-muted" style="font-size: 3rem;"></i>
-                                    <p class="oh-text--muted mt-2">{% trans "No invoices yet" %}</p>
-                                    <a href="{% url 'invoicing:placement_list' %}" class="oh-btn oh-btn--primary oh-btn--sm">
-                                        {% trans "Create First Invoice" %}
-                                    </a>
-                                </div>
-                                {% endfor %}
+                                {% endif %}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Statistics Section -->
-                <div class="row mt-4">
-                    <div class="col-12">
-                        <div class="oh-card-dashboard oh-card-dashboard--no-scale oh-card-dashboard--transparent">
-                            <div class="oh-card-dashboard__header oh-card-dashboard__header--divider">
-                                <span class="oh-card-dashboard__title">{% trans "Invoice Statistics" %}</span>
+                <!-- Invoice Statistics (Both Types) -->
+                <div class="oh-card mt-4">
+                    <div class="oh-card__header">
+                        <h5>{% trans "Invoice Statistics" %}</h5>
+                    </div>
+                    <div class="oh-card__body">
+                        <!-- Invoice Type Breakdown -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="text-center">
+                                    <h4 class="text-info">{{ stats.recruitment_invoices|default:0 }}</h4>
+                                    <small class="text-muted">
+                                        <i class="oh-icon-users me-1"></i>{% trans "Recruitment Invoices" %}
+                                    </small>
+                                </div>
                             </div>
-                            <div class="oh-card-dashboard__body">
-                                <div class="row text-center">
-                                    <div class="col-md-3">
-                                        <div class="border-end">
-                                            <h4 class="text-secondary">{{ draft_count|default:0 }}</h4>
-                                            <small class="text-muted">{% trans "Draft Invoices" %}</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="border-end">
-                                            <h4 class="text-warning">{{ sent_count|default:0 }}</h4>
-                                            <small class="text-muted">{% trans "Sent Invoices" %}</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="border-end">
-                                            <h4 class="text-success">{{ paid_count|default:0 }}</h4>
-                                            <small class="text-muted">{% trans "Paid Invoices" %}</small>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <h4 class="text-danger">{{ overdue_count|default:0 }}</h4>
-                                        <small class="text-muted">{% trans "Overdue Invoices" %}</small>
-                                    </div>
+                            <div class="col-md-6">
+                                <div class="text-center">
+                                    <h4 class="text-primary">{{ stats.general_invoices|default:0 }}</h4>
+                                    <small class="text-muted">
+                                        <i class="oh-icon-file-text me-1"></i>{% trans "General Invoices" %}
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Status Breakdown -->
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <div class="border-end">
+                                    <h4 class="text-secondary">{{ stats.draft_invoices|default:0 }}</h4>
+                                    <small class="text-muted">{% trans "Draft" %}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="border-end">
+                                    <h4 class="text-warning">{{ stats.sent_invoices|default:0 }}</h4>
+                                    <small class="text-muted">{% trans "Sent" %}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="border-end">
+                                    <h4 class="text-success">{{ stats.paid_invoices|default:0 }}</h4>
+                                    <small class="text-muted">{% trans "Paid" %}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <h4 class="text-danger">{{ stats.overdue_invoices|default:0 }}</h4>
+                                <small class="text-muted">{% trans "Overdue" %}</small>
+                            </div>
+                        </div>
+                        
+                        <!-- Revenue Summary -->
+                        <div class="row mt-4 pt-4 border-top">
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <h4 class="text-success">₹{{ stats.total_revenue|default:0|floatformat:2 }}</h4>
+                                    <small class="text-muted">{% trans "Total Revenue" %}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <h4 class="text-warning">₹{{ stats.pending_revenue|default:0|floatformat:2 }}</h4>
+                                    <small class="text-muted">{% trans "Pending Revenue" %}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <h4 class="text-info">₹{{ stats.avg_invoice_value|default:0|floatformat:2 }}</h4>
+                                    <small class="text-muted">{% trans "Avg Invoice Value" %}</small>
                                 </div>
                             </div>
                         </div>
@@ -237,17 +342,8 @@
         </div>
     </div>
 </main>
-{% endblock content %}
 
-{% block js %}
-{{ block.super }}
-<script>
-// Add any dashboard-specific JavaScript here
-document.addEventListener('DOMContentLoaded', function() {
-    // Auto-refresh dashboard data every 5 minutes
-    setInterval(function() {
-        // You can add AJAX calls here to refresh dashboard stats
-    }, 300000);
-});
-</script>
-{% endblock js %}
+<!-- Load CSS and JS -->
+<link rel="stylesheet" href="{% static 'invoicing/css/dashboard.css' %}">
+<script src="{% static 'invoicing/js/dashboard.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,272 @@
+{% extends 'index.html' %}
+{% load i18n %}
+{% load static %}
+{% load custom_filters %} 
+
+{% block title %}{{ candidate.name }} - {% trans "Candidate Details" %}{% endblock %}
+
+{% block content %}
+<main :class="sidebarOpen ? 'oh-main__sidebar-visible' : ''">
+    <div class="oh-wrapper">
+        <div class="oh-dashboard row">
+            <div class="oh-dashboard__left col-12">
+                <!-- Header Section -->
+                <div class="oh-titlebar mb-4">
+                    <div class="d-flex justify-content-between align-items-center w-100">
+                        <div class="d-flex align-items-center">
+                            <a href="{% url 'invoicing:candidate_list' %}" class="oh-btn oh-btn--light me-3">
+                                <i class="oh-icon-arrow-left"></i>
+                            </a>
+                            <div>
+                                <h3 class="oh-title mb-0">
+                                    <i class="oh-icon-user me-2"></i>{{ candidate.name }}
+                                </h3>
+                                <small class="text-muted">{% trans "Candidate Profile" %}</small>
+                            </div>
+                        </div>
+                        <div class="oh-titlebar__actions">
+                            {% if candidate.status == 'active' %}
+                            <a href="{% url 'invoicing:placement_create' %}?candidate={{ candidate.id }}" class="oh-btn oh-btn--success me-2">
+                                <i class="oh-icon-plus me-2"></i>{% trans "Create Placement" %}
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'invoicing:candidate_edit' candidate.id %}" class="oh-btn oh-btn--primary">
+                                <i class="oh-icon-edit me-2"></i>{% trans "Edit Profile" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Candidate Profile -->
+                    <div class="col-md-8">
+                        <div class="oh-card mb-4">
+                            <div class="oh-card__header">
+                                <h5>{% trans "Personal Information" %}</h5>
+                            </div>
+                            <div class="oh-card__body">
+                                <div class="row">
+                                    <div class="col-md-3 text-center">
+                                        <div class="candidate-avatar mb-3">
+                                            <div class="oh-avatar oh-avatar--xl">
+                                                {{ candidate.name|first|upper }}
+                                            </div>
+                                            <div class="mt-2">
+                                                <span class="status-badge status-badge--{{ candidate.status }}">
+                                                    {{ candidate.get_status_display }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-9">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="info-item">
+                                                    <label>{% trans "Full Name" %}</label>
+                                                    <p>{{ candidate.name }}</p>
+                                                </div>
+                                                <div class="info-item">
+                                                    <label>{% trans "Email" %}</label>
+                                                    <p>
+                                                        {% if candidate.email %}
+                                                            <a href="mailto:{{ candidate.email }}">{{ candidate.email }}</a>
+                                                        {% else %}
+                                                            <span class="text-muted">{% trans "Not provided" %}</span>
+                                                        {% endif %}
+                                                    </p>
+                                                </div>
+                                                <div class="info-item">
+                                                    <label>{% trans "Phone" %}</label>
+                                                    <p>
+                                                        {% if candidate.phone %}
+                                                            <a href="tel:{{ candidate.phone }}">{{ candidate.phone }}</a>
+                                                        {% else %}
+                                                            <span class="text-muted">{% trans "Not provided" %}</span>
+                                                        {% endif %}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="info-item">
+                                                    <label>{% trans "Experience" %}</label>
+                                                    <p>{{ candidate.experience_years }} {% trans "years" %} ({{ candidate.experience_level }})</p>
+                                                </div>
+                                                <div class="info-item">
+                                                    <label>{% trans "Expected Salary" %}</label>
+                                                    <p>
+                                                        {% if candidate.expected_salary %}
+                                                            ₹{{ candidate.expected_salary|floatformat:0 }}
+                                                        {% else %}
+                                                            <span class="text-muted">{% trans "Not specified" %}</span>
+                                                        {% endif %}
+                                                    </p>
+                                                </div>
+                                                <div class="info-item">
+                                                    <label>{% trans "Notice Period" %}</label>
+                                                    <p>{{ candidate.notice_period_days }} {% trans "days" %}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Professional Information -->
+                        <div class="oh-card mb-4">
+                            <div class="oh-card__header">
+                                <h5>{% trans "Professional Information" %}</h5>
+                            </div>
+                            <div class="oh-card__body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="info-item">
+                                            <label>{% trans "Current Company" %}</label>
+                                            <p>{{ candidate.current_company|default:"Not specified" }}</p>
+                                        </div>
+                                        <div class="info-item">
+                                            <label>{% trans "Current Position" %}</label>
+                                            <p>{{ candidate.current_position|default:"Not specified" }}</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="info-item">
+                                            <label>{% trans "Preferred Location" %}</label>
+                                            <p>{{ candidate.preferred_location|default:"Any location" }}</p>
+                                        </div>
+                                        <div class="info-item">
+                                            <label>{% trans "Availability Date" %}</label>
+                                            <p>{{ candidate.availability_date|default:"Immediate" }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {% if candidate.skills %}
+                                <div class="info-item">
+                                    <label>{% trans "Skills & Technologies" %}</label>
+                                    <div class="skills-display">
+                                        {% for skill in candidate.skills|split:"," %}
+                                        <span class="skill-badge">{{ skill|trim }}</span>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if candidate.linkedin_profile %}
+                                <div class="info-item">
+                                    <label>{% trans "LinkedIn Profile" %}</label>
+                                    <p><a href="{{ candidate.linkedin_profile }}" target="_blank">{{ candidate.linkedin_profile }}</a></p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Notes -->
+                        {% if candidate.notes %}
+                        <div class="oh-card">
+                            <div class="oh-card__header">
+                                <h5>{% trans "Internal Notes" %}</h5>
+                            </div>
+                            <div class="oh-card__body">
+                                <p>{{ candidate.notes|linebreaks }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Sidebar -->
+                    <div class="col-md-4">
+                        <!-- Quick Actions -->
+                        <div class="oh-card mb-4">
+                            <div class="oh-card__header">
+                                <h5>{% trans "Quick Actions" %}</h5>
+                            </div>
+                            <div class="oh-card__body">
+                                <div class="d-grid gap-2">
+                                    {% if candidate.email %}
+                                    <a href="mailto:{{ candidate.email }}" class="oh-btn oh-btn--primary">
+                                        <i class="oh-icon-mail me-2"></i>{% trans "Send Email" %}
+                                    </a>
+                                    {% endif %}
+                                    {% if candidate.phone %}
+                                    <a href="tel:{{ candidate.phone }}" class="oh-btn oh-btn--secondary">
+                                        <i class="oh-icon-phone me-2"></i>{% trans "Call Candidate" %}
+                                    </a>
+                                    {% endif %}
+                                    {% if candidate.linkedin_profile %}
+                                    <a href="{{ candidate.linkedin_profile }}" target="_blank" class="oh-btn oh-btn--info">
+                                        <i class="oh-icon-linkedin me-2"></i>{% trans "View LinkedIn" %}
+                                    </a>
+                                    {% endif %}
+                                    {% if candidate.status == 'active' %}
+                                    <a href="{% url 'invoicing:placement_create' %}?candidate={{ candidate.id }}" class="oh-btn oh-btn--success">
+                                        <i class="oh-icon-plus me-2"></i>{% trans "Create Placement" %}
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Statistics -->
+                        <div class="oh-card mb-4">
+                            <div class="oh-card__header">
+                                <h5>{% trans "Statistics" %}</h5>
+                            </div>
+                            <div class="oh-card__body">
+                                <div class="stat-item">
+                                    <span class="stat-label">{% trans "Total Placements" %}</span>
+                                    <span class="stat-value">{{ total_placements }}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">{% trans "Successful Placements" %}</span>
+                                    <span class="stat-value">{{ successful_placements }}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">{% trans "Total Revenue Generated" %}</span>
+                                    <span class="stat-value">₹{{ total_revenue|floatformat:2 }}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">{% trans "Added On" %}</span>
+                                    <span class="stat-value">{{ candidate.created_at|date:"M d, Y" }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Placement History -->
+                        <div class="oh-card">
+                            <div class="oh-card__header">
+                                <h5>{% trans "Placement History" %}</h5>
+                            </div>
+                            <div class="oh-card__body">
+                                {% if placements %}
+                                    {% for placement in placements %}
+                                    <div class="placement-item">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <strong>{{ placement.position }}</strong>
+                                                <br>
+                                                <small class="text-muted">{{ placement.client.name }}</small>
+                                                <br>
+                                                <small class="text-success">₹{{ placement.placement_fee|floatformat:2 }}</small>
+                                            </div>
+                                            <span class="badge bg-{% if placement.status == 'completed' %}success{% elif placement.status == 'joined' %}info{% else %}secondary{% endif %}">
+                                                {{ placement.get_status_display }}
+                                            </span>
+                                        </div>
+                                        <small class="text-muted">{{ placement.joining_date }}</small>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                <p class="text-muted text-center">{% trans "No placements yet" %}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<link rel="stylesheet" href="{% static 'invoicing/css/candidate-detail.css' %}">
+{% endblock %}

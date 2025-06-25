@@ -1,0 +1,35 @@
+/* Candidate Form Styles */
+.candidate-preview {
+    text-align: center;
+}
+
+.preview-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.preview-stats .stat-item {
+    text-align: center;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.preview-stats .stat-item small {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.oh-form__input-group-text {
+    background: #f8f9fa;
+    border-color: #ced4da;
+    color: #6c757d;
+}
+
+.oh-form__help {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 5px;
+}

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice {{ invoice.invoice_number }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 300;
+        }
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .content {
+            padding: 30px;
+        }
+        .custom-message {
+            background: #e8f5e8;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 0 8px 8px 0;
+        }
+        .custom-message p {
+            margin: 0;
+            color: #2c3e50;
+            font-style: italic;
+        }
+        .invoice-details {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        .invoice-details h3 {
+            color: #2c3e50;
+            margin: 0 0 20px 0;
+            font-size: 20px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            font-size: 18px;
+            color: #27ae60;
+        }
+        .detail-label {
+            color: #7f8c8d;
+            font-weight: 500;
+        }
+        .detail-value {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        .service-description {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .service-description h4 {
+            color: #2c3e50;
+            margin: 0 0 10px 0;
+        }
+        .cta-section {
+            text-align: center;
+            margin: 40px 0;
+        }
+        .cta-button {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 15px 35px;
+            text-decoration: none;
+            border-radius: 50px;
+            display: inline-block;
+            font-weight: bold;
+            font-size: 16px;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+            transition: all 0.3s ease;
+        }
+        .payment-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .payment-info h4 {
+            color: #856404;
+            margin: 0 0 15px 0;
+        }
+        .footer {
+            background: #2c3e50;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .footer p {
+            margin: 5px 0;
+            opacity: 0.8;
+        }
+        .company-info {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #34495e;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .status-draft { background: #6c757d; color: white; }
+        .status-sent { background: #ffc107; color: #212529; }
+        .status-paid { background: #28a745; color: white; }
+        
+        @media (max-width: 600px) {
+            .container { margin: 10px; }
+            .header, .content, .footer { padding: 20px; }
+            .detail-row { flex-direction: column; align-items: flex-start; }
+            .detail-value { margin-top: 5px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Invoice {{ invoice.invoice_number }}</h1>
+            <p>Thank you for choosing {{ company_name }}!</p>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <!-- Custom Message -->
+            {% if custom_message %}
+            <div class="custom-message">
+                <p>{{ custom_message|linebreaks }}</p>
+            </div>
+            {% endif %}
+            
+            <!-- Greeting -->
+            <p>Dear {{ invoice.client_name }},</p>
+            <p>We hope this email finds you well. Please find the details of your invoice below:</p>
+            
+            <!-- Invoice Details -->
+            <div class="invoice-details">
+                <h3>📋 Invoice Details</h3>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Invoice Number:</span>
+                    <span class="detail-value">{{ invoice.invoice_number }}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Issue Date:</span>
+                    <span class="detail-value">{{ invoice.issue_date|date:"F d, Y" }}</span>
+                </div>
+                
+                {% if invoice.due_date %}
+                <div class="detail-row">
+                    <span class="detail-label">Due Date:</span>
+                    <span class="detail-value">{{ invoice.due_date|date:"F d, Y" }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="detail-row">
+                    <span class="detail-label">Status:</span>
+                    <span class="detail-value">
+                        <span class="status-badge status-{{ invoice.status }}">
+                            {{ invoice.get_status_display|default:invoice.status }}
+                        </span>
+                    </span>
+                </div>
+                
+                <div class="detail-row">
+                    <span class="detail-label">Total Amount:</span>
+                    <span class="detail-value">₹{{ invoice.total_amount|floatformat:2 }}</span>
+                </div>
+            </div>
+            
+            <!-- Service Description -->
+            {% if invoice.service_description %}
+            <div class="service-description">
+                <h4>🔧 Service Description</h4>
+                <p>{{ invoice.service_description|linebreaks }}</p>
+            </div>
+            {% endif %}
+            
+            <!-- Payment Information -->
+            {% if invoice.status != 'paid' %}
+            <div class="payment-info">
+                <h4>💳 Payment Information</h4>
+                <p><strong>Amount Due:</strong> ₹{{ invoice.total_amount|floatformat:2 }}</p>
+                {% if invoice.due_date %}
+                <p><strong>Payment Due:</strong> {{ invoice.due_date|date:"F d, Y" }}</p>
+                {% endif %}
+                <p>Please ensure payment is made by the due date to avoid any late fees.</p>
+            </div>
+            {% endif %}
+            
+            <!-- Call to Action -->
+            <div class="cta-section">
+                {% if invoice.status != 'paid' %}
+                <a href="{{ website_url }}" class="cta-button">
+                    💰 Make Payment
+                </a>
+                {% else %}
+                <a href="{{ website_url }}" class="cta-button">
+                    📄 View Invoice
+                </a>
+                {% endif %}
+            </div>
+            
+            <!-- Additional Information -->
+            <p>If you have any questions regarding this invoice, please don't hesitate to contact us. We appreciate your business and look forward to serving you again.</p>
+            
+            <p>Best regards,<br>
+            <strong>{{ company_name }} Team</strong></p>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <div class="company-info">
+                <p><strong>{{ company_name }}</strong></p>
+                {% if company_address %}
+                <p>{{ company_address }}</p>
+                {% endif %}
+                {% if company_phone %}
+                <p>📞 {{ company_phone }}</p>
+                {% endif %}
+                <p>📧 {{ company_email }}</p>
+                {% if website_url %}
+                <p>🌐 {{ website_url }}</p>
+                {% endif %}
+            </div>
+            
+            <p style="margin-top: 20px; font-size: 12px; opacity: 0.7;">
+                This is an automated email. Please do not reply to this email address.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

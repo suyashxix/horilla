@@ -1,0 +1,213 @@
+{% extends 'index.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Send Invoice" %} - {{ invoice.invoice_number }}{% endblock %}
+
+{% block content %}
+<main :class="sidebarOpen ? 'oh-main__sidebar-visible' : ''">
+    <div class="oh-wrapper">
+        <div class="oh-dashboard row">
+            <div class="oh-dashboard__left col-12">
+                <!-- Header Section -->
+                <div class="oh-titlebar mb-4">
+                    <div class="d-flex align-items-center">
+                        <a href="{% url 'invoicing:general_invoice_detail' invoice.id %}" class="oh-btn oh-btn--light me-3">
+                            <i class="oh-icon-arrow-left"></i>
+                        </a>
+                        <div>
+                            <h3 class="oh-title mb-0">
+                                <i class="oh-icon-mail me-2"></i>{% trans "Send Invoice" %}
+                            </h3>
+                            <small class="text-muted">{{ invoice.invoice_number }}</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Email Form -->
+                    <div class="col-md-8">
+                        <div class="oh-card">
+                            <div class="oh-card__header">
+                                <h5>{% trans "Email Details" %}</h5>
+                            </div>
+                            <div class="oh-card__body">
+                                <form method="post" id="emailForm">
+                                    {% csrf_token %}
+                                    
+                                    <div class="oh-form__group mb-3">
+                                        <label class="oh-form__label" for="recipient_email">{% trans "Recipient Email" %} *</label>
+                                        <input type="email" 
+                                               class="oh-form__input" 
+                                               id="recipient_email" 
+                                               name="recipient_email" 
+                                               value="{{ default_recipient }}" 
+                                               required>
+                                    </div>
+                                    
+                                    <div class="oh-form__group mb-3">
+                                        <label class="oh-form__label" for="subject">{% trans "Subject" %} *</label>
+                                        <input type="text" 
+                                               class="oh-form__input" 
+                                               id="subject" 
+                                               name="subject" 
+                                               value="{{ default_subject }}" 
+                                               required>
+                                    </div>
+                                    
+                                    <div class="oh-form__group mb-3">
+                                        <label class="oh-form__label" for="custom_message">{% trans "Custom Message" %}</label>
+                                        <textarea class="oh-form__input" 
+                                                  id="custom_message" 
+                                                  name="custom_message" 
+                                                  rows="4" 
+                                                  placeholder="{% trans 'Add a personal message (optional)' %}"></textarea>
+                                        <small class="oh-form__help">{% trans "This message will appear at the top of the email" %}</small>
+                                    </div>
+                                    
+                                    <div class="oh-form__actions">
+                                        <button type="submit" class="oh-btn oh-btn--primary" id="sendBtn">
+                                            <i class="oh-icon-mail me-2"></i>{% trans "Send Invoice" %}
+                                        </button>
+                                        <button type="button" class="oh-btn oh-btn--secondary me-2" id="previewBtn">
+                                            <i class="oh-icon-eye me-2"></i>{% trans "Preview Email" %}
+                                        </button>
+                                        <a href="{% url 'invoicing:general_invoice_detail' invoice.id %}" class="oh-btn oh-btn--light">
+                                            {% trans "Cancel" %}
+                                        </a>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Invoice Preview -->
+                    <div class="col-md-4">
+                        <div class="oh-card">
+                            <div class="oh-card__header">
+                                <h5>{% trans "Invoice Summary" %}</h5>
+                            </div>
+                            <div class="oh-card__body">
+                                <div class="mb-3">
+                                    <strong>{% trans "Invoice Number" %}:</strong><br>
+                                    {{ invoice.invoice_number }}
+                                </div>
+                                <div class="mb-3">
+                                    <strong>{% trans "Client" %}:</strong><br>
+                                    {{ invoice.client_name }}
+                                </div>
+                                <div class="mb-3">
+                                    <strong>{% trans "Amount" %}:</strong><br>
+                                    <span class="text-success h5">₹{{ invoice.total_amount|floatformat:2 }}</span>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>{% trans "Status" %}:</strong><br>
+                                    <span class="badge bg-{% if invoice.status == 'paid' %}success{% elif invoice.status == 'sent' %}warning{% else %}secondary{% endif %}">
+                                        {{ invoice.get_status_display|default:invoice.status }}
+                                    </span>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>{% trans "Due Date" %}:</strong><br>
+                                    {% if invoice.due_date %}
+                                        {{ invoice.due_date }}
+                                    {% else %}
+                                        <span class="text-muted">{% trans "Not set" %}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Email Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{% trans "Email Preview" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="previewContent">
+                <!-- Preview content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Close" %}</button>
+                <button type="button" class="btn btn-primary" onclick="document.getElementById('emailForm').submit();">
+                    <i class="oh-icon-mail me-2"></i>{% trans "Send Email" %}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const previewBtn = document.getElementById('previewBtn');
+    const sendBtn = document.getElementById('sendBtn');
+    const form = document.getElementById('emailForm');
+    
+    // Preview functionality
+    previewBtn.addEventListener('click', function() {
+        const formData = new FormData(form);
+        
+        // Create preview content
+        const previewContent = `
+            <div class="email-preview" style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #f8f9fa; padding: 20px;">
+                <div style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <h1 style="color: #2c3e50; margin: 0;">Invoice ${formData.get('subject').split(' ')[1] || ''}</h1>
+                        <p style="color: #7f8c8d; margin: 5px 0 0 0;">Thank you for your business!</p>
+                    </div>
+                    
+                    ${formData.get('custom_message') ? `
+                    <div style="background: #e8f5e8; padding: 15px; border-radius: 5px; margin-bottom: 25px;">
+                        <p style="margin: 0; color: #2c3e50;">${formData.get('custom_message')}</p>
+                    </div>
+                    ` : ''}
+                    
+                    <div style="margin-bottom: 25px;">
+                        <h3 style="color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px;">Invoice Details</h3>
+                        <table style="width: 100%; margin-top: 15px;">
+                            <tr>
+                                <td style="padding: 8px 0; color: #7f8c8d;"><strong>Invoice Number:</strong></td>
+                                <td style="padding: 8px 0; text-align: right;">{{ invoice.invoice_number }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #7f8c8d;"><strong>Client:</strong></td>
+                                <td style="padding: 8px 0; text-align: right;">{{ invoice.client_name }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: #7f8c8d;"><strong>Amount:</strong></td>
+                                <td style="padding: 8px 0; text-align: right; color: #27ae60; font-size: 18px; font-weight: bold;">₹{{ invoice.total_amount|floatformat:2 }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 30px 0;">
+                        <a href="#" style="background: #3498db; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">View Invoice Details</a>
+                    </div>
+                    
+                    <div style="border-top: 1px solid #ecf0f1; padding-top: 20px; text-align: center; color: #7f8c8d; font-size: 14px;">
+                        <p>If you have any questions, please don't hesitate to contact us.</p>
+                        <p style="margin: 5px 0 0 0;">Best regards,<br><strong>Your Company Team</strong></p>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('previewContent').innerHTML = previewContent;
+        new bootstrap.Modal(document.getElementById('previewModal')).show();
+    });
+    
+    // Form submission with loading state
+    form.addEventListener('submit', function() {
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<i class="spinner-border spinner-border-sm me-2"></i>Sending...';
+    });
+});
+</script>
+{% endblock %}

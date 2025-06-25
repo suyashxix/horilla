@@ -1,0 +1,299 @@
+{% extends 'index.html' %}
+{% load i18n %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}
+{% if form_action == 'edit' %}
+    {% trans "Edit Candidate" %} - {{ candidate.name }}
+{% else %}
+    {% trans "Add New Candidate" %}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<main :class="sidebarOpen ? 'oh-main__sidebar-visible' : ''">
+    <div class="oh-wrapper">
+        <div class="oh-dashboard row">
+            <div class="oh-dashboard__left col-12">
+                <!-- Header Section -->
+                <div class="oh-titlebar mb-4">
+                    <div class="d-flex align-items-center">
+                        <a href="{% if form_action == 'edit' %}{% url 'invoicing:candidate_detail' candidate.id %}{% else %}{% url 'invoicing:candidate_list' %}{% endif %}" class="oh-btn oh-btn--light me-3">
+                            <i class="oh-icon-arrow-left"></i>
+                        </a>
+                        <h3 class="oh-title mb-0">
+                            <i class="oh-icon-user me-2"></i>
+                            {% if form_action == 'edit' %}
+                                {% trans "Edit Candidate" %}
+                            {% else %}
+                                {% trans "Add New Candidate" %}
+                            {% endif %}
+                        </h3>
+                    </div>
+                </div>
+
+                <!-- Candidate Form -->
+                <form method="post" enctype="multipart/form-data" id="candidateForm">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <!-- Personal Information -->
+                            <div class="oh-card mb-4">
+                                <div class="oh-card__header">
+                                    <h5>{% trans "Personal Information" %}</h5>
+                                </div>
+                                <div class="oh-card__body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="oh-form__group mb-3">
+                                                <label class="oh-form__label" for="name">{% trans "Full Name" %} *</label>
+                                                <input type="text" 
+                                                       class="oh-form__input" 
+                                                       id="name" 
+                                                       name="name" 
+                                                       value="{{ candidate.name|default:'' }}" 
+                                                       required>
+                                            </div>
+                                            
+                                            <div class="oh-form__group mb-3">
+                                                <label class="oh-form__label" for="email">{% trans "Email Address" %}</label>
+                                                <input type="email" 
+                                                       class="oh-form__input" 
+                                                       id="email" 
+                                                       name="email" 
+                                                       value="{{ candidate.email|default:'' }}">
+                                            </div>
+                                            
+                                            <div class="oh-form__group mb-3">
+                                                <label class="oh-form__label" for="phone">{% trans "Phone Number" %}</label>
+                                                <input type="tel" 
+                                                       class="oh-form__input" 
+                                                       id="phone" 
+                                                       name="phone" 
+                                                       value="{{ candidate.phone|default:'' }}">
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="oh-form__group mb-3">
+                                                <label class="oh-form__label" for="preferred_location">{% trans "Preferred Location" %}</label>
+                                                <input type="text" 
+                                                       class="oh-form__input" 
+                                                       id="preferred_location" 
+                                                       name="preferred_location" 
+                                                       value="{{ candidate.preferred_location|default:'' }}"
+                                                       placeholder="e.g. Bangalore, Mumbai, Remote">
+                                            </div>
+                                            
+                                            <div class="oh-form__group mb-3">
+                                                <label class="oh-form__label" for="availability_date">{% trans "Availability Date" %}</label>
+                                                <input type="date" 
+                                                       class="oh-form__input" 
+                                                       id="availability_date" 
+                                                       name="availability_date" 
+                                                       value="{{ candidate.availability_date|date:'Y-m-d'|default:'' }}">
+                                            </div>
+                                            
+                                            <div class="oh-form__group mb-3">
+                                                <label class="oh-form__label" for="linkedin_profile">{% trans "LinkedIn Profile" %}</label>
+                                                <input type="url" 
+                                                       class="oh-form__input" 
+                                                       id="linkedin_profile" 
+                                                       name="linkedin_profile" 
+                                                       value="{{ candidate.linkedin_profile|default:'' }}"
+                                                       placeholder="https://linkedin.com/in/username">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Professional Information -->
+                            <div class="oh-card mb-4">
+                                <div class="oh-card__header">
+                                    <h5>{% trans "Professional Information" %}</h5>
+                                </div>
+                                <div class="oh-card__body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="oh-form__group mb-3">
+                                                <label class="oh-form__label" for="current_company">{% trans "Current Company" %}</label>
+                                                <input type="text" 
+                                                       class="oh-form__input" 
+                                                       id="current_company" 
+                                                       name="current_company" 
+                                                       value="{{ candidate.current_company|default:'' }}">
+                                            </div>
+                                            
+                                            <div class="oh-form__group mb-3">
+                                                <label class="oh-form__label" for="current_position">{% trans "Current Position" %}</label>
+                                                <input type="text" 
+                                                       class="oh-form__input" 
+                                                       id="current_position" 
+                                                       name="current_position" 
+                                                       value="{{ candidate.current_position|default:'' }}">
+                                            </div>
+                                            
+                                            <div class="oh-form__group mb-3">
+                                                <label class="oh-form__label" for="experience_years">{% trans "Experience (Years)" %}</label>
+                                                <input type="number" 
+                                                       class="oh-form__input" 
+                                                       id="experience_years" 
+                                                       name="experience_years" 
+                                                       value="{{ candidate.experience_years|default:0 }}" 
+                                                       min="0" 
+                                                       max="50">
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="oh-form__group mb-3">
+                                                <label class="oh-form__label" for="expected_salary">{% trans "Expected Salary (Annual)" %}</label>
+                                                <div class="oh-form__input-group">
+                                                    <span class="oh-form__input-group-text">₹</span>
+                                                    <input type="number" 
+                                                           class="oh-form__input" 
+                                                           id="expected_salary" 
+                                                           name="expected_salary" 
+                                                           value="{{ candidate.expected_salary|default:'' }}" 
+                                                           step="1000"
+                                                           placeholder="1000000">
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="oh-form__group mb-3">
+                                                <label class="oh-form__label" for="notice_period_days">{% trans "Notice Period (Days)" %}</label>
+                                                <select class="oh-form__input" id="notice_period_days" name="notice_period_days">
+                                                    <option value="0" {% if candidate.notice_period_days == 0 %}selected{% endif %}>Immediate</option>
+                                                    <option value="15" {% if candidate.notice_period_days == 15 %}selected{% endif %}>15 days</option>
+                                                    <option value="30" {% if candidate.notice_period_days == 30 or not candidate %}selected{% endif %}>30 days</option>
+                                                    <option value="45" {% if candidate.notice_period_days == 45 %}selected{% endif %}>45 days</option>
+                                                    <option value="60" {% if candidate.notice_period_days == 60 %}selected{% endif %}>60 days</option>
+                                                    <option value="90" {% if candidate.notice_period_days == 90 %}selected{% endif %}>90 days</option>
+                                                </select>
+                                            </div>
+                                            
+                                            {% if form_action == 'edit' %}
+                                            <div class="oh-form__group mb-3">
+                                                <label class="oh-form__label" for="status">{% trans "Status" %}</label>
+                                                <select class="oh-form__input" id="status" name="status">
+                                                    <option value="active" {% if candidate.status == 'active' %}selected{% endif %}>{% trans "Active" %}</option>
+                                                    <option value="placed" {% if candidate.status == 'placed' %}selected{% endif %}>{% trans "Placed" %}</option>
+                                                    <option value="inactive" {% if candidate.status == 'inactive' %}selected{% endif %}>{% trans "Inactive" %}</option>
+                                                    <option value="blacklisted" {% if candidate.status == 'blacklisted' %}selected{% endif %}>{% trans "Blacklisted" %}</option>
+                                                </select>
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="oh-form__group mb-3">
+                                        <label class="oh-form__label" for="skills">{% trans "Skills & Technologies" %}</label>
+                                        <textarea class="oh-form__input" 
+                                                  id="skills" 
+                                                  name="skills" 
+                                                  rows="3" 
+                                                  placeholder="e.g. Python, Django, React, AWS, Project Management">{{ candidate.skills|default:'' }}</textarea>
+                                        <small class="oh-form__help">{% trans "Separate skills with commas" %}</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Additional Information -->
+                            <div class="oh-card mb-4">
+                                <div class="oh-card__header">
+                                    <h5>{% trans "Additional Information" %}</h5>
+                                </div>
+                                <div class="oh-card__body">
+                                    <div class="oh-form__group mb-3">
+                                        <label class="oh-form__label" for="resume">{% trans "Resume" %}</label>
+                                        <input type="file" 
+                                               class="oh-form__input" 
+                                               id="resume" 
+                                               name="resume" 
+                                               accept=".pdf,.doc,.docx">
+                                        {% if candidate.resume %}
+                                        <small class="oh-form__help">
+                                            {% trans "Current file" %}: <a href="{{ candidate.resume.url }}" target="_blank">{{ candidate.resume.name }}</a>
+                                        </small>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="oh-form__group mb-3">
+                                        <label class="oh-form__label" for="notes">{% trans "Internal Notes" %}</label>
+                                        <textarea class="oh-form__input" 
+                                                  id="notes" 
+                                                  name="notes" 
+                                                  rows="4" 
+                                                  placeholder="{% trans 'Internal notes about the candidate (not visible to candidate)' %}">{{ candidate.notes|default:'' }}</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sidebar -->
+                        <div class="col-md-4">
+                            <!-- Preview Card -->
+                            <div class="oh-card mb-4">
+                                <div class="oh-card__header">
+                                    <h5>{% trans "Preview" %}</h5>
+                                </div>
+                                <div class="oh-card__body text-center">
+                                    <div class="candidate-preview">
+                                        <div class="oh-avatar oh-avatar--lg mb-3">
+                                            <span id="previewInitial">{{ candidate.name|first|upper|default:"?" }}</span>
+                                        </div>
+                                        <h6 id="previewName">{{ candidate.name|default:"Candidate Name" }}</h6>
+                                        <p class="text-muted" id="previewPosition">{{ candidate.current_position|default:"Position" }}</p>
+                                        <div class="preview-stats">
+                                            <div class="stat-item">
+                                                <small class="text-muted">{% trans "Experience" %}</small>
+                                                <div id="previewExperience">{{ candidate.experience_years|default:0 }} {% trans "years" %}</div>
+                                            </div>
+                                            <div class="stat-item">
+                                                <small class="text-muted">{% trans "Expected Salary" %}</small>
+                                                <div id="previewSalary">
+                                                    {% if candidate.expected_salary %}
+                                                        ₹{{ candidate.expected_salary|floatformat:0 }}
+                                                    {% else %}
+                                                        {% trans "Not specified" %}
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Form Actions -->
+                            <div class="oh-card">
+                                <div class="oh-card__body">
+                                    <div class="d-grid gap-2">
+                                        <button type="submit" class="oh-btn oh-btn--primary">
+                                            <i class="oh-icon-save me-2"></i>
+                                            {% if form_action == 'edit' %}
+                                                {% trans "Update Candidate" %}
+                                            {% else %}
+                                                {% trans "Add Candidate" %}
+                                            {% endif %}
+                                        </button>
+                                        <a href="{% if form_action == 'edit' %}{% url 'invoicing:candidate_detail' candidate.id %}{% else %}{% url 'invoicing:candidate_list' %}{% endif %}" 
+                                           class="oh-btn oh-btn--light">
+                                            {% trans "Cancel" %}
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<link rel="stylesheet" href="{% static 'invoicing/css/candidate-form.css' %}">
+<script src="{% static 'invoicing/js/candidate-form.js' %}"></script>
+{% endblock %}

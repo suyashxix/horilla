@@ -1,0 +1,40 @@
+Invoice {{ invoice.invoice_number }} - {{ company_name }}
+
+Dear {{ invoice.client_name }},
+
+{% if custom_message %}{{ custom_message }}
+
+{% endif %}We hope this email finds you well. Please find the details of your invoice below:
+
+INVOICE DETAILS
+===============
+Invoice Number: {{ invoice.invoice_number }}
+Issue Date: {{ invoice.issue_date|date:"F d, Y" }}
+{% if invoice.due_date %}Due Date: {{ invoice.due_date|date:"F d, Y" }}
+{% endif %}Status: {{ invoice.get_status_display|default:invoice.status }}
+Total Amount: ₹{{ invoice.total_amount|floatformat:2 }}
+
+{% if invoice.service_description %}SERVICE DESCRIPTION
+===================
+{{ invoice.service_description }}
+
+{% endif %}{% if invoice.status != 'paid' %}PAYMENT INFORMATION
+===================
+Amount Due: ₹{{ invoice.total_amount|floatformat:2 }}
+{% if invoice.due_date %}Payment Due: {{ invoice.due_date|date:"F d, Y" }}
+{% endif %}Please ensure payment is made by the due date to avoid any late fees.
+
+{% endif %}If you have any questions regarding this invoice, please don't hesitate to contact us. We appreciate your business and look forward to serving you again.
+
+Best regards,
+{{ company_name }} Team
+
+---
+{{ company_name }}
+{% if company_address %}{{ company_address }}
+{% endif %}{% if company_phone %}Phone: {{ company_phone }}
+{% endif %}Email: {{ company_email }}
+{% if website_url %}Website: {{ website_url }}
+{% endif %}
+
+This is an automated email. Please do not reply to this email address.

@@ -1,0 +1,314 @@
+{% extends 'index.html' %}
+{% load i18n %}
+{% load static %}
+{% load widget_tweaks %}
+{% load custom_filters %} 
+
+{% block title %}{% trans "Candidates" %}{% endblock %}
+
+{% block content %}
+<main :class="sidebarOpen ? 'oh-main__sidebar-visible' : ''">
+    <div class="oh-wrapper">
+        <div class="oh-dashboard row">
+            <div class="oh-dashboard__left col-12">
+                <!-- Header Section -->
+                <div class="oh-titlebar mb-4">
+                    <div class="d-flex justify-content-between align-items-center w-100">
+                        <h3 class="oh-title mb-0">
+                            <i class="oh-icon-users me-2"></i>{% trans "Candidate Management" %}
+                        </h3>
+                        <div class="oh-titlebar__actions">
+                            <span class="badge bg-info me-2" id="candidateCount">{{ candidates|length }} {% trans "Candidates" %}</span>
+                            <a href="{% url 'invoicing:candidate_create' %}" class="oh-btn oh-btn--primary">
+                                <i class="oh-icon-plus me-2"></i>{% trans "Add Candidate" %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filters and Search Section -->
+                <div class="oh-card mb-4">
+                    <div class="oh-card__body">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="oh-form__group">
+                                    <label class="oh-form__label">{% trans "Search" %}</label>
+                                    <div class="oh-form__input-group">
+                                        <span class="oh-form__input-group-text">
+                                            <i class="oh-icon-search"></i>
+                                        </span>
+                                        <input type="text" 
+                                               class="oh-form__input" 
+                                               id="candidateSearch" 
+                                               placeholder="{% trans 'Search by name, email, skills...' %}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="oh-form__group">
+                                    <label class="oh-form__label">{% trans "Status" %}</label>
+                                    <select class="oh-form__input" id="statusFilter">
+                                        <option value="">{% trans "All Status" %}</option>
+                                        <option value="active">{% trans "Active" %}</option>
+                                        <option value="placed">{% trans "Placed" %}</option>
+                                        <option value="inactive">{% trans "Inactive" %}</option>
+                                        <option value="blacklisted">{% trans "Blacklisted" %}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <div class="oh-form__group">
+                                    <label class="oh-form__label">{% trans "Experience" %}</label>
+                                    <select class="oh-form__input" id="experienceFilter">
+                                        <option value="">{% trans "All Levels" %}</option>
+                                        <option value="junior">{% trans "Junior (0-2 yrs)" %}</option>
+                                        <option value="mid-level">{% trans "Mid-level (3-5 yrs)" %}</option>
+                                        <option value="senior">{% trans "Senior (6-10 yrs)" %}</option>
+                                        <option value="expert">{% trans "Expert (10+ yrs)" %}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="oh-form__group">
+                                    <label class="oh-form__label">{% trans "Sort By" %}</label>
+                                    <select class="oh-form__input" id="sortFilter">
+                                        <option value="name">{% trans "Name" %}</option>
+                                        <option value="experience">{% trans "Experience" %}</option>
+                                        <option value="salary">{% trans "Expected Salary" %}</option>
+                                        <option value="created">{% trans "Date Added" %}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-1">
+                                <div class="oh-form__group">
+                                    <label class="oh-form__label">&nbsp;</label>
+                                    <button class="oh-btn oh-btn--light w-100" id="clearFilters">
+                                        <i class="oh-icon-refresh"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="oh-card-dashboard oh-card-dashboard--info">
+                            <div class="oh-card-dashboard__body text-center">
+                                <div class="oh-stats__number" id="totalCount">{{ stats.total }}</div>
+                                <div class="oh-stats__label">{% trans "Total Candidates" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="oh-card-dashboard oh-card-dashboard--success">
+                            <div class="oh-card-dashboard__body text-center">
+                                <div class="oh-stats__number" id="activeCount">{{ stats.active }}</div>
+                                <div class="oh-stats__label">{% trans "Active" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="oh-card-dashboard oh-card-dashboard--primary">
+                            <div class="oh-card-dashboard__body text-center">
+                                <div class="oh-stats__number" id="placedCount">{{ stats.placed }}</div>
+                                <div class="oh-stats__label">{% trans "Placed" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="oh-card-dashboard oh-card-dashboard--secondary">
+                            <div class="oh-card-dashboard__body text-center">
+                                <div class="oh-stats__number" id="inactiveCount">{{ stats.inactive }}</div>
+                                <div class="oh-stats__label">{% trans "Inactive" %}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Candidates List -->
+                <div class="oh-card">
+                    <div class="oh-card__header">
+                        <h5>{% trans "Candidate Directory" %}</h5>
+                    </div>
+                    <div class="oh-card__body">
+                        {% if candidates %}
+                        <div id="candidatesList">
+                            {% for candidate in candidates %}
+                            <div class="candidate-card" 
+                                 data-name="{{ candidate.name|lower }}"
+                                 data-email="{{ candidate.email|lower }}"
+                                 data-skills="{{ candidate.skills|lower }}"
+                                 data-status="{{ candidate.status }}"
+                                 data-experience="{{ candidate.experience_level|lower }}"
+                                 data-salary="{{ candidate.expected_salary|default:0 }}"
+                                 data-created="{{ candidate.created_at|date:'Y-m-d' }}">
+                                
+                                <div class="candidate-card__header">
+                                    <div class="candidate-card__avatar">
+                                        <div class="oh-avatar oh-avatar--lg">
+                                            {{ candidate.name|first|upper }}
+                                        </div>
+                                    </div>
+                                    <div class="candidate-card__info">
+                                        <h5 class="candidate-card__name">{{ candidate.name }}</h5>
+                                        <p class="candidate-card__position">{{ candidate.current_position|default:"Looking for opportunities" }}</p>
+                                        <div class="candidate-card__meta">
+                                            <span class="meta-item">
+                                                <i class="oh-icon-briefcase me-1"></i>{{ candidate.experience_years }} {% trans "years exp" %}
+                                            </span>
+                                            {% if candidate.current_company %}
+                                            <span class="meta-item">
+                                                <i class="oh-icon-building me-1"></i>{{ candidate.current_company }}
+                                            </span>
+                                            {% endif %}
+                                            {% if candidate.expected_salary %}
+                                            <span class="meta-item">
+                                                <i class="oh-icon-dollar-sign me-1"></i>₹{{ candidate.expected_salary|floatformat:0 }}
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="candidate-card__status">
+                                        <span class="status-badge status-badge--{{ candidate.status }}">
+                                            {% if candidate.status == 'active' %}
+                                                <i class="oh-icon-check-circle me-1"></i>{% trans "Available" %}
+                                            {% elif candidate.status == 'placed' %}
+                                                <i class="oh-icon-user-check me-1"></i>{% trans "Placed" %}
+                                            {% elif candidate.status == 'inactive' %}
+                                                <i class="oh-icon-pause-circle me-1"></i>{% trans "Inactive" %}
+                                            {% else %}
+                                                <i class="oh-icon-x-circle me-1"></i>{% trans "Blacklisted" %}
+                                            {% endif %}
+                                        </span>
+                                        <div class="experience-badge">
+                                            {{ candidate.experience_level }}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="candidate-card__body">
+                                    <div class="candidate-details">
+                                        {% if candidate.email %}
+                                        <div class="detail-item">
+                                            <span class="detail-label">{% trans "Email" %}:</span>
+                                            <span class="detail-value">{{ candidate.email }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if candidate.phone %}
+                                        <div class="detail-item">
+                                            <span class="detail-label">{% trans "Phone" %}:</span>
+                                            <span class="detail-value">{{ candidate.phone }}</span>
+                                        </div>
+                                        {% endif %}
+                                        {% if candidate.preferred_location %}
+                                        <div class="detail-item">
+                                            <span class="detail-label">{% trans "Preferred Location" %}:</span>
+                                            <span class="detail-value">{{ candidate.preferred_location }}</span>
+                                        </div>
+                                        {% endif %}
+                                        <div class="detail-item">
+                                            <span class="detail-label">{% trans "Notice Period" %}:</span>
+                                            <span class="detail-value">{{ candidate.notice_period_days }} {% trans "days" %}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    {% if candidate.skills %}
+                                    <div class="candidate-skills mt-3">
+                                        <h6>{% trans "Skills" %}:</h6>
+                                        <div class="skills-tags">
+                                            {% for skill in candidate.skills|split:"," %}
+                                            <span class="skill-tag">{{ skill|trim }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="candidate-card__actions">
+                                    {% if candidate.status == 'active' %}
+                                        <a href="{% url 'invoicing:placement_create' %}?candidate={{ candidate.id }}" 
+                                           class="oh-btn oh-btn--primary oh-btn--sm">
+                                            <i class="oh-icon-plus me-1"></i>{% trans "Create Placement" %}
+                                        </a>
+                                    {% endif %}
+                                    
+                                    <div class="oh-dropdown">
+                                        <button class="oh-btn oh-btn--light oh-btn--sm oh-dropdown__toggle">
+                                            <i class="oh-icon-more"></i>
+                                        </button>
+                                        <div class="oh-dropdown__content">
+                                            <a href="{% url 'invoicing:candidate_detail' candidate.id %}" class="oh-dropdown__item">
+                                                <i class="oh-icon-eye me-2"></i>{% trans "View Details" %}
+                                            </a>
+                                            <a href="{% url 'invoicing:candidate_edit' candidate.id %}" class="oh-dropdown__item">
+                                                <i class="oh-icon-edit me-2"></i>{% trans "Edit Candidate" %}
+                                            </a>
+                                            {% if candidate.email %}
+                                            <a href="mailto:{{ candidate.email }}" class="oh-dropdown__item">
+                                                <i class="oh-icon-mail me-2"></i>{% trans "Send Email" %}
+                                            </a>
+                                            {% endif %}
+                                            {% if candidate.phone %}
+                                            <a href="tel:{{ candidate.phone }}" class="oh-dropdown__item">
+                                                <i class="oh-icon-phone me-2"></i>{% trans "Call" %}
+                                            </a>
+                                            {% endif %}
+                                            {% if candidate.linkedin_profile %}
+                                            <a href="{{ candidate.linkedin_profile }}" target="_blank" class="oh-dropdown__item">
+                                                <i class="oh-icon-linkedin me-2"></i>{% trans "LinkedIn" %}
+                                            </a>
+                                            {% endif %}
+                                            <div class="oh-dropdown__divider"></div>
+                                            <button class="oh-dropdown__item text-danger" data-candidate-id="{{ candidate.id }}" data-action="delete">
+                                                <i class="oh-icon-delete me-2"></i>{% trans "Delete" %}
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5" id="emptyState">
+                            <i class="oh-icon-users text-muted" style="font-size: 3rem;"></i>
+                            <h4 class="text-muted mt-3">{% trans "No candidates found" %}</h4>
+                            <p class="text-muted">{% trans "Add your first candidate to start building your talent pool" %}</p>
+                            <a href="{% url 'invoicing:candidate_create' %}" class="oh-btn oh-btn--primary mt-3">
+                                <i class="oh-icon-plus me-2"></i>{% trans "Add First Candidate" %}
+                            </a>
+                        </div>
+                        {% endif %}
+
+                        <!-- No Results Message (Hidden by default) -->
+                        <div id="noResultsMessage" class="text-center py-5" style="display: none;">
+                            <i class="oh-icon-search text-muted" style="font-size: 3rem;"></i>
+                            <h4 class="text-muted mt-3">{% trans "No candidates match your search" %}</h4>
+                            <p class="text-muted">{% trans "Try adjusting your filters or search terms" %}</p>
+                            <button class="oh-btn oh-btn--secondary" id="clearSearchBtn">
+                                <i class="oh-icon-refresh me-2"></i>{% trans "Clear Search" %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Pass data to JavaScript -->
+<script>
+window.CANDIDATE_CONFIG = {
+    csrfToken: '{{ csrf_token }}',
+    translations: {
+        candidates: '{% trans "Candidates" %}',
+        confirmDelete: '{% trans "Are you sure you want to delete this candidate?" %}'
+    }
+};
+</script>
+
+<!-- Load CSS and JS -->
+<link rel="stylesheet" href="{% static 'invoicing/css/candidate-list.css' %}">
+<script src="{% static 'invoicing/js/candidate-list.js' %}"></script>
+{% endblock %}
