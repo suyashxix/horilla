@@ -1,0 +1,20 @@
+<h2>All Reimbursements</h2>
+<ul>
+  {% for r in reimbursements %}
+    <li>
+      <strong>{{ r.note }}</strong><br>
+      Status: {{ r.status }}<br>
+      Vendor: {{ r.vendor }} | Amount: {{ r.amount }}<br>
+      <img src="{{ r.image.url }}" width="200"><br>
+      {% if r.status == 'pending' %}
+        <form method="post" action="{% url 'mark_done' r.id %}">
+          {% csrf_token %}
+          <button type="submit">Mark as Done</button>
+        </form>
+      {% endif %}
+    </li>
+  {% endfor %}
+</ul>
+<a href="{% url 'reimbursement_detail' r.id %}">View Details</a>
+<span style="color: green;" {% if r.status == 'done' %}>✓ Done</span>
+<span style="color: red;" {% if r.status == 'pending' %}>⏳ Pending</span>
