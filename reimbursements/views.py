@@ -12,7 +12,7 @@ def upload_reimbursement(request):
         form = ReimbursementForm(request.POST, request.FILES)
         if form.is_valid():
             reimbursement = form.save(commit=False)
-            amount, vendor = None
+            amount, vendor = None, None
             reimbursement.amount = amount
             reimbursement.vendor = vendor
             reimbursement.save()
@@ -37,5 +37,19 @@ def mark_reimbursement_done(request, pk):
         except Reimbursement.DoesNotExist:
             pass
     return redirect('reimbursement_list')
+
+
+def reimbursement_success(request):
+    return render(request, 'reimbursement/success.html')
+
+
+def reimbursement_detail(request, pk):
+    try:
+        reimbursement = Reimbursement.objects.get(pk=pk)
+    except Reimbursement.DoesNotExist:
+        return redirect('reimbursement_list')
+    return render(request, 'reimbursement/detail.html', {'reimbursement': reimbursement})
+
+
 
 

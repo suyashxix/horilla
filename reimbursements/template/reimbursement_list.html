@@ -15,3 +15,6 @@
     </li>
   {% endfor %}
 </ul>
+<a href="{% url 'reimbursement_detail' r.id %}">View Details</a>
+<span style="color: green;" {% if r.status == 'done' %}>✓ Done</span>
+<span style="color: red;" {% if r.status == 'pending' %}>⏳ Pending</span>

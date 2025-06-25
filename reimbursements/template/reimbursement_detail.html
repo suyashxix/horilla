@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reimbursement Details</title>
+</head>
+<body>
+    <h2>🧾 Reimbursement Details</h2>
+    <p><strong>Note:</strong> {{ reimbursement.note }}</p>
+    <p><strong>Status:</strong> {{ reimbursement.status }}</p>
+    <p><strong>Vendor:</strong> {{ reimbursement.vendor|default:"Not available" }}</p>
+    <p><strong>Amount:</strong> {{ reimbursement.amount|default:"Not available" }}</p>
+    <p><strong>Uploaded:</strong> {{ reimbursement.uploaded_at }}</p>
+    <p><img src="{{ reimbursement.image.url }}" width="300" alt="Invoice Image"></p>
+
+    {% if reimbursement.status == "pending" %}
+        <form method="post" action="{% url 'mark_done' reimbursement.id %}">
+            {% csrf_token %}
+            <button type="submit">✅ Mark as Done</button>
+        </form>
+    {% endif %}
+
+    <br><a href="{% url 'reimbursement_list' %}">🔙 Back to List</a>
+</body>
+</html>
