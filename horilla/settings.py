@@ -65,7 +65,7 @@ INSTALLED_APPS = [
     "django_filters",
     "widget_tweaks",
     "django_apscheduler",
-  
+    "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
 
     # Horilla core apps
@@ -95,6 +95,7 @@ INSTALLED_APPS = [
     "horilla_backup",
     "project",
     "invoicing",
+    "reimbursements",
     
 ]
 APSCHEDULER_DATETIME_FORMAT = "N j, Y, f:s a"

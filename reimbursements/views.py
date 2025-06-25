@@ -2,14 +2,17 @@
 
 from django.shortcuts import render, redirect
 from .forms import ReimbursementForm
-from .ocr_utils import parse_invoice  # custom parsing logic
+ 
+from django.views.decorators.csrf import csrf_exempt
+from .models import Reimbursement
+
 
 def upload_reimbursement(request):
     if request.method == 'POST':
         form = ReimbursementForm(request.POST, request.FILES)
         if form.is_valid():
             reimbursement = form.save(commit=False)
-            amount, vendor = parse_invoice(reimbursement.image.path)
+            amount, vendor = None
             reimbursement.amount = amount
             reimbursement.vendor = vendor
             reimbursement.save()
@@ -17,4 +20,22 @@ def upload_reimbursement(request):
     else:
         form = ReimbursementForm()
     return render(request, 'reimbursement/upload.html', {'form': form})
+
+
+
+def reimbursement_list(request):
+    reimbursements = Reimbursement.objects.all().order_by('-uploaded_at')
+    return render(request, 'reimbursement/list.html', {'reimbursements': reimbursements})
+
+@csrf_exempt
+def mark_reimbursement_done(request, pk):
+    if request.method == 'POST':
+        try:
+            reimbursement = Reimbursement.objects.get(pk=pk)
+            reimbursement.status = 'done'
+            reimbursement.save()
+        except Reimbursement.DoesNotExist:
+            pass
+    return redirect('reimbursement_list')
+
 
